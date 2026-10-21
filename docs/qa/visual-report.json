@@ -6,7 +6,7 @@
       "scroll": 310,
       "bodyFont": 17,
       "smallestField": 16,
-      "smallestControl": 42,
+      "smallestControl": 24,
       "transcriptFont": null,
       "overflow": []
     },
@@ -46,7 +46,7 @@
       "scroll": 380,
       "bodyFont": 17,
       "smallestField": 16,
-      "smallestControl": 42,
+      "smallestControl": 24,
       "transcriptFont": null,
       "overflow": []
     },
@@ -86,7 +86,7 @@
       "scroll": 758,
       "bodyFont": 17,
       "smallestField": 16,
-      "smallestControl": 42,
+      "smallestControl": 24,
       "transcriptFont": null,
       "overflow": []
     },
@@ -126,7 +126,7 @@
       "scroll": 1014,
       "bodyFont": 17,
       "smallestField": 16,
-      "smallestControl": 42,
+      "smallestControl": 24,
       "transcriptFont": null,
       "overflow": []
     },
@@ -166,7 +166,7 @@
       "scroll": 1430,
       "bodyFont": 17,
       "smallestField": 16,
-      "smallestControl": 42,
+      "smallestControl": 24,
       "transcriptFont": null,
       "overflow": []
     },
@@ -206,7 +206,7 @@
       "scroll": 1910,
       "bodyFont": 17,
       "smallestField": 16,
-      "smallestControl": 42,
+      "smallestControl": 24,
       "transcriptFont": null,
       "overflow": []
     },
@@ -260,8 +260,8 @@
   ],
   "motion": {
     "samples": 120,
-    "medianMs": 16.699999999999818,
-    "p95Ms": 16.799999999999955,
+    "medianMs": 16.700000000000045,
+    "p95Ms": 33.40000000000009,
     "framesOver50Ms": 0
   },
   "errors": [],

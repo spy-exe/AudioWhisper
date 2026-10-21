@@ -17,6 +17,10 @@ testes, cobertura, build e auditoria das dependências de produção.
 Veja [STUDIO_2.md](STUDIO_2.md) para iniciar o Ollama local, configurar diarização, captura OBS,
 recuperação, autenticação e compartilhamento privado.
 
+Para gravar o desktop e o microfone mesmo depois de fechar o navegador, use **Windows · segundo plano**.
+O [capturador Windows](docs/WINDOWS_CAPTURE.md) fica na bandeja, preserva o áudio em disco e reenvia
+trechos após reconexão. Inicie-o com `.\scripts\Start-Capturador.ps1` antes de gravar.
+
 ## Requisitos
 
 - Docker Desktop (Windows/macOS) ou Docker Engine + Docker Compose v2 (Linux)

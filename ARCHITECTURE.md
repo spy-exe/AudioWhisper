@@ -139,3 +139,9 @@ AudioWhisper/
    conectar, envia primeiro um snapshot do estado atual do job (para reconexões).
 5. Ao completar, o worker já gera os 5 formatos de export por padrão; o usuário pode gerar
    exports adicionais sob demanda (`POST /api/jobs/{id}/exports`).
+
+## Capturador Windows
+
+`apps/capture/audiowhisper_capture` roda no host Windows, fora dos containers. A API de controle em loopback valida Host e origem do Studio. `CaptureManager` mantém uma thread de captura que prepara, inicia e libera os dispositivos WASAPI; essas operações têm afinidade com a thread. A interface aguarda a preparação antes de confirmar a sessão. O processo não depende da vida da aba.
+
+`SpoolSession` preserva PCM em diário local, consolida WAVs atomicamente e registra confirmações de entrega. Outra thread envia os trechos para `/api/live`, com sequências idempotentes e retomada após falhas. O worker existente transcreve e consolida o áudio. Reiniciar o capturador recupera arquivos e envios pendentes, sem reiniciar o microfone. O [guia operacional](docs/WINDOWS_CAPTURE.md) descreve configuração, armazenamento e limites.

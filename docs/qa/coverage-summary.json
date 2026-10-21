@@ -1,30 +1,30 @@
 {
   "date": "2026-10-21",
   "web": {
-    "tests": 55,
+    "tests": 71,
     "lines": {
-      "total": 1595,
-      "covered": 771,
+      "total": 1769,
+      "covered": 956,
       "skipped": 0,
-      "pct": 48.33
+      "pct": 54.04
     },
     "statements": {
-      "total": 1764,
-      "covered": 821,
+      "total": 1979,
+      "covered": 1029,
       "skipped": 0,
-      "pct": 46.54
+      "pct": 51.99
     },
     "functions": {
-      "total": 521,
-      "covered": 203,
+      "total": 571,
+      "covered": 246,
       "skipped": 0,
-      "pct": 38.96
+      "pct": 43.08
     },
     "branches": {
-      "total": 1137,
-      "covered": 526,
+      "total": 1338,
+      "covered": 691,
       "skipped": 0,
-      "pct": 46.26
+      "pct": 51.64
     },
     "branchesTrue": {
       "total": 0,
@@ -50,8 +50,16 @@
         "branches": 93.87
       },
       "lib/live-audio.ts": {
-        "lines": 97.47,
-        "branches": 88.37
+        "lines": 97.91,
+        "branches": 85.24
+      },
+      "components/live/WindowsCapture.tsx": {
+        "lines": 89.65,
+        "branches": 80.23
+      },
+      "lib/capture-wake-lock.ts": {
+        "lines": 100,
+        "branches": 81.25
       }
     }
   },
@@ -70,6 +78,22 @@
         "covered": 435,
         "total": 656,
         "pct": 66.31
+      }
+    },
+    "windowsCapture": {
+      "tests": 26,
+      "lines": {
+        "covered": 426,
+        "total": 547,
+        "pct": 77.88
+      },
+      "modules": {
+        "__main__.py": 0.0,
+        "audio.py": 90.55,
+        "client.py": 96.67,
+        "manager.py": 84.62,
+        "server.py": 84.21,
+        "spool.py": 94.66
       }
     }
   }

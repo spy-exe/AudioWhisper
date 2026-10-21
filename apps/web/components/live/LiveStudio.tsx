@@ -16,11 +16,16 @@ import { useJobProgress } from "@/hooks/useJobProgress";
 import { TranscriptFeed } from "@/components/jobs/TranscriptFeed";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
+import { CaptureSources } from "./CaptureSources";
+import { WindowsCapture } from "./WindowsCapture";
 
 export function LiveStudio() {
   const pathname = usePathname();
   const { settings } = useSettings();
   const [slot, setSlot] = useState<HTMLElement | null>(null);
+  const [mode, setMode] = useState("browser");
+  const [nativeActive, setNativeActive] = useState(false);
+  const [nativeBusy, setNativeBusy] = useState(false);
   const [source, setSource] = useState("microphone");
   const [device, setDevice] = useState("");
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
@@ -46,6 +51,17 @@ export function LiveStudio() {
   const completed = job?.status === "completed" && job.id === capture?.jobId;
 
   useEffect(() => {
+    try {
+      const selected = new URLSearchParams(window.location.search).get("capture") === "windows"
+        || localStorage.getItem("audiowhisper-capture-mode") === "windows";
+      if (selected) {
+        setMode("windows");
+        localStorage.setItem("audiowhisper-capture-mode", "windows");
+      }
+    } catch { /* Browser storage is optional for the capture mode preference. */ }
+  }, []);
+
+  useEffect(() => {
     setSlot(
       pathname === "/" ? document.getElementById("live-capture-slot") : null,
     );
@@ -56,6 +72,7 @@ export function LiveStudio() {
       .capture()
       .then(async (saved) => {
         if (active && saved) {
+          setMode("browser");
           captureRef.current = saved;
           setCapture(saved);
           setSeconds(saved.duration);
@@ -401,26 +418,7 @@ export function LiveStudio() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
-          <fieldset disabled={busy}>
-            <legend className="mb-3 text-sm font-semibold">O que você quer gravar?</legend>
-            <div className="capture-sources">
-              {[
-                { value: "microphone", label: "Microfone", description: "Sua voz e o ambiente" },
-                { value: "system", label: "Áudio do desktop", description: "O som dos aplicativos" },
-                { value: "mixed", label: "Desktop e microfone", description: "A conversa dos dois lados" },
-                { value: "obs", label: "OBS / entrada virtual", description: "Uma entrada de áudio dedicada" },
-              ].map((option) => (
-                <label key={option.value} className="capture-source">
-                  <input type="radio" name="capture-source" value={option.value}
-                    checked={source === option.value} onChange={() => setSource(option.value)} />
-                  <span>
-                    <span className="block text-sm font-semibold">{option.label}</span>
-                    <span className="mt-1 block text-xs text-text-muted">{option.description}</span>
-                  </span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
+          <CaptureSources source={source} onChange={setSource} disabled={busy} />
           {(source === "system" || source === "mixed") && (
             <p className="rounded-lg border border-accent/25 bg-accent/5 p-3 text-xs leading-relaxed text-text-secondary">
               No Chrome ou Edge, selecione a tela ou aba e marque <strong>Compartilhar áudio</strong>.
@@ -475,8 +473,8 @@ export function LiveStudio() {
         </div>
       )}
       {!capture && (
-        <label className="flex cursor-pointer items-start gap-3 text-xs leading-relaxed text-text-secondary">
-          <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-accent"
+        <label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-text-secondary">
+          <input type="checkbox" className="mt-1 h-6 w-6 shrink-0 accent-accent"
             checked={keepAwake} onChange={(event) => setKeepAwake(event.target.checked)} />
           Manter a tela ativa durante a gravação, quando permitido pelo navegador
         </label>
@@ -570,10 +568,25 @@ export function LiveStudio() {
       )}
     </section>
   );
+  const modePicker = !capture && (
+    <div className="flex flex-wrap gap-2" role="group" aria-label="Modo de gravação">
+      {([["browser", "No navegador"], ["windows", "Windows · segundo plano"]] as const).map(([value, label]) => (
+        <Button key={value} size="sm" variant={mode === value ? "primary" : "secondary"}
+          aria-pressed={mode === value} disabled={busy || nativeActive || nativeBusy}
+          onClick={() => {
+            setMode(value);
+            try { localStorage.setItem("audiowhisper-capture-mode", value); } catch { /* Optional preference. */ }
+          }}>{label}</Button>
+      ))}
+    </div>
+  );
+  const content = mode === "windows" && !capture
+    ? <WindowsCapture onRecordingChange={setNativeActive} onBusyChange={setNativeBusy} /> : controls;
   if (slot)
     return createPortal(
       <div className="space-y-5">
-        {controls}
+        {modePicker}
+        {content}
         {capture && !completed && (
           <TranscriptFeed
             segments={newSegments}
@@ -584,9 +597,9 @@ export function LiveStudio() {
       </div>,
       slot,
     );
-  return capture && !completed ? (
+  return (capture && !completed) || (mode === "windows" && nativeActive) ? (
     <div className="fixed right-4 bottom-4 left-4 z-40 max-w-lg shadow-xl lg:left-auto">
-      {controls}
+      {content}
     </div>
   ) : null;
 }

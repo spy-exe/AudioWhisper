@@ -8,6 +8,18 @@ Capturas da aplicação em execução, com a reunião sintética da suíte de te
 
 ![Studio no celular](screenshots/studio-mobile.png)
 
+## Captura em segundo plano
+
+Capturador em processo separado com entrada sintética. O histórico pessoal foi ocultado nestas capturas.
+
+![Capturador Windows pronto no desktop](screenshots/windows-ready-desktop.png)
+
+![Capturador Windows pronto em tela estreita](screenshots/windows-ready-mobile.png)
+
+![Gravação após reabrir o navegador](screenshots/windows-recording-desktop.png)
+
+![Gravação em tela estreita](screenshots/windows-recording-mobile.png)
+
 ## Biblioteca
 
 ![Biblioteca](screenshots/library-desktop.png)

@@ -1,6 +1,6 @@
 # Validação — 21/10/2026
 
-QA local em Windows, Chromium desktop e emulação Pixel 7, com a aplicação de produção em Docker Compose. Transcrição real com faster-whisper `turbo`, CUDA/float16 e RTX 5060; documentos com Ollama `qwen3:4b`. O microfone usa um arquivo sintético. As capturas publicadas contêm somente a reunião de teste, identificada pelo SHA-256 do arquivo da suíte.
+QA local em Windows, Chromium desktop e emulação Pixel 7, com a aplicação de produção em Docker Compose. Transcrição real com faster-whisper `turbo`, CUDA/float16 e RTX 5060; documentos com Ollama `qwen3:4b`. Os testes de navegador usam áudio sintético. Capturas da biblioteca são filtradas pelo SHA-256 da reunião de teste; o modo Windows usa uma entrada sintética e oculta o histórico pessoal.
 
 ## Resultados
 
@@ -8,36 +8,41 @@ QA local em Windows, Chromium desktop e emulação Pixel 7, com a aplicação de
 |---|---|
 | API e núcleo compartilhado | 70 testes aprovados; cobertura de linhas 88,78% |
 | Worker | 32 testes aprovados; cobertura de linhas 66,31% |
-| Frontend | 55 testes aprovados; cobertura de linhas 48,33% |
-| Fluxos completos no Chromium desktop e Pixel 7 | 40 cenários aprovados, incluindo retestes com a fila livre |
+| Frontend | 71 testes aprovados; cobertura de linhas 54,04% |
+| Capturador Windows | 26 testes aprovados; cobertura de linhas 77,88% |
+| Fluxos completos no Chromium desktop e Pixel 7 | 41 aprovados; caso exclusivo do capturador Windows dispensado no projeto mobile |
 | TypeScript, ESLint e build de produção | Aprovados |
 | Auditoria npm das dependências de produção | Zero vulnerabilidades reportadas |
 | Studio, biblioteca, configurações e editor | 24 combinações em 320, 390, 768, 1024, 1440 e 1920px sem estouro horizontal |
+| Capturador Windows | Mais seis larguras, estados pronto/gravando e reconexão à mesma sessão após fechar o Chromium inteiro |
 | Estados visuais adicionais | Biblioteca carregando, busca sem resultados e erro recuperável |
 | Acessibilidade automatizada | Sem violações nos testes axe de Studio, biblioteca, configurações e editor |
 | Movimento | Mudança real entre frames, preferência do sistema e opção de desativar efeitos exercitadas |
 
-Os testes de acessibilidade aplicam as regras WCAG A/AA disponíveis no axe; não substituem uma auditoria manual completa nem testes com leitores de tela. Após a suíte completa, os testes visuais e de teclado são repetidos para o ajuste final da posição dos switches.
+Os testes de acessibilidade aplicam as regras WCAG A/AA disponíveis no axe; não substituem uma auditoria manual completa nem testes com leitores de tela. O modo Windows também passa por axe em 390, 1440 e 1920px. Cartões de fonte empilham no celular e os seletores têm pelo menos 24px.
 
-Na execução posterior à correção das citações, 38 cenários passaram diretamente. Dois testes de editor ultrapassaram a espera de cinco minutos enquanto a fila serial processava a regeneração de uma gravação longa; foram repetidos com a fila livre. Execute o E2E sem análises concorrentes na mesma instalação.
+A suíte completa passou em uma execução de 5,3 minutos. Depois da correção da afinidade de thread do WASAPI, os testes nativos e o cenário de fechar/reabrir o navegador foram repetidos com sucesso. Execute E2E sem análises pessoais concorrentes na mesma instalação.
 
-O corpo foi medido em 17px, campos em pelo menos 16px e transcrição em 19px em todos os tamanhos. A amostra local de 120 frames com a arte espectral animada em 1440px registrou mediana de 16,7ms e percentil 95 de 16,8ms, sem frames acima de 50ms. É uma medição desta máquina, sem simulação de hardware lento.
+O corpo foi medido em 17px, campos em pelo menos 16px e transcrição em 19px em todos os tamanhos. A amostra local de 120 frames com a arte espectral animada em 1440px registrou mediana de 16,7ms e percentil 95 de 33,4ms, sem frames acima de 50ms, durante QA concorrente. É uma medição desta máquina, sem simulação de hardware lento.
 
 ## Cobertura e limites
 
-A cobertura contabiliza o código completo de cada escopo, incluindo rotas e componentes que também são exercitados pelo navegador. A cobertura de linhas dos testes de navegador não é somada à dos testes unitários. Há limites mínimos globais e por módulo no Vitest; o CI também exige pelo menos 88% para API/núcleo e 65% para worker.
+A cobertura contabiliza o código completo de cada escopo, incluindo rotas e componentes que também são exercitados pelo navegador. A cobertura de linhas dos testes de navegador não é somada à dos testes unitários. Há limites mínimos globais e por módulo no Vitest; o CI também exige pelo menos 88% para API/núcleo, 65% para worker e 75% para capturador Windows.
 
 | Módulo | Cobertura de linhas |
 |---|---|
-| Captura/PCM/WAV no navegador | 97,47% |
+| Captura/PCM/WAV no navegador | 97,91% |
 | Biblioteca | 91,04% |
 | Assistente de documentos | 88,05% |
 | Revisão e apresentação de documento | 86,66% |
 | Autenticação no frontend | 100% |
 | Recuperação do worker | 100% |
 | Pipeline de transcrição | 90% |
+| Diário e recuperação do capturador Windows | 94,66% |
 
 O resultado detalhado está em [coverage-summary.json](docs/qa/coverage-summary.json). O CI publica os relatórios completos como artefatos. A cobertura global do frontend ainda é parcial; há lacunas em upload, configurações e componentes de mídia na suíte unitária. Esses fluxos têm testes de navegador, sem equivalência automática a cobertura de linhas.
+
+O relatório do capturador inclui o ponto de entrada da bandeja, cuja interação não tem cobertura automatizada. Testes nativos cobrem persistência antes do envio, diário parcial após interrupção, arquivo danificado, falha de rede, mistura/resampling e preparação, uso e liberação de dispositivos na mesma thread. O smoke test WASAPI real recebeu 1,3s de amostras nos modos desktop e combinado, com proteção de suspensão ativa e recursos liberados, usando um destino em memória que não salva áudio pessoal. Veja o [guia do capturador](docs/WINDOWS_CAPTURE.md).
 
 Community-1 não foi executado com o modelo autorizado nesta instalação. O cálculo de sobreposição temporal tem testes; a qualidade da diarização real ainda requer validação com o modelo. SMTP externo, OBS físico/entrada virtual e áudio de tela precisam de configuração e verificação no dispositivo. Os testes de SMTP usam substituto local e não enviam mensagens.
 
