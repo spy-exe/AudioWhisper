@@ -22,6 +22,7 @@ class CaptureManager:
         self.current = None
         self.audio = None
         self.thread = None
+        self.starting = False
         self.stopping = threading.Event()
         self.shutdown = threading.Event()
         self.level = 0
@@ -39,7 +40,8 @@ class CaptureManager:
     def status(self):
         with self.lock:
             snapshot = self.current.snapshot() if self.current else {}
-            return {"version": "1.0.0", "recording": bool(self.thread and self.thread.is_alive()),
+            return {"version": "1.0.0", "recording": bool(self.thread and self.thread.is_alive() and not self.starting),
+                    "starting": self.starting,
                     "sleep_protected": bool(self.audio and self.audio.power_protected), "level": self.level,
                     "delivery_error": self.delivery_error, "recovery_errors": self.recovery_errors,
                     "pending_total": sum(s.snapshot()["pending_chunks"] for s in self.sessions), **snapshot}
@@ -48,26 +50,24 @@ class CaptureManager:
         with self.lock:
             if self.thread and self.thread.is_alive():
                 raise RuntimeError("Já existe uma gravação em andamento no Windows")
-            audio = self.audio_factory(source, microphone, output, prevent_sleep)
-            audio.prepare()
-            try:
-                job_id = self.client.create(title, source, settings)
-                try:
-                    session = SpoolSession.create(self.root, job_id, title, source)
-                except Exception:
-                    self.client.stop(job_id, 0, 0)
-                    raise
-            except Exception:
-                audio.close()
-                raise
-            self.current, self.audio = session, audio
-            self.sessions.append(session)
+            ready, result = threading.Event(), {}
+            self.starting = True
             self.stopping.clear()
-            self.thread = threading.Thread(target=self.record, args=(session, audio), name="AudioWhisper-capture", daemon=False)
+            self.thread = threading.Thread(target=self.record,
+                args=(title, source, settings, microphone, output, prevent_sleep, ready, result),
+                name="AudioWhisper-capture", daemon=False)
             self.thread.start()
-            return self.status()
+        if not ready.wait(20):
+            self.stopping.set()
+            raise TimeoutError("O dispositivo não iniciou a captura no prazo esperado")
+        if "error" in result:
+            self.thread.join(timeout=2)
+            raise result["error"]
+        return self.status()
 
-    def record(self, session, audio):
+    def record(self, title, source, settings, microphone, output, prevent_sleep, ready, result):
+        # WASAPI device creation, start and release must all belong to this thread.
+        session = audio = None
         error = None
 
         def consume(data):
@@ -78,17 +78,42 @@ class CaptureManager:
                 self.stopping.set()
 
         try:
+            audio = self.audio_factory(source, microphone, output, prevent_sleep)
+            audio.prepare()
+            if self.stopping.is_set():
+                raise TimeoutError("A preparação da captura foi cancelada")
+            job_id = self.client.create(title, source, settings)
+            try:
+                session = SpoolSession.create(self.root, job_id, title, source)
+            except Exception:
+                self.client.stop(job_id, 0, 0)
+                raise
+            with self.lock:
+                self.current, self.audio = session, audio
+                self.sessions.append(session)
+                self.starting = False
+            ready.set()
             audio.run(consume, self.stopping)
-        except Exception:
+        except Exception as failure:
+            if session is None:
+                result["error"] = failure
             error = "A entrada foi interrompida. Os trechos salvos serão processados; verifique os dispositivos antes de iniciar outra gravação."
             logger.exception("A captura de áudio foi interrompida")
         finally:
             try:
-                session.finish(error)
-            except Exception:
-                session.manifest["error"] = "Falha ao consolidar o arquivo local. Libere espaço em disco; os arquivos de recuperação foram preservados."
-                logger.exception("Falha ao consolidar a captura local")
-            self.level = 0
+                if audio:
+                    audio.close()
+                if session:
+                    try:
+                        session.finish(error)
+                    except Exception:
+                        session.manifest["error"] = "Falha ao consolidar o arquivo local. Libere espaço em disco; os arquivos de recuperação foram preservados."
+                        logger.exception("Falha ao consolidar a captura local")
+            finally:
+                self.level = 0
+                with self.lock:
+                    self.starting = False
+                ready.set()
 
     def stop(self):
         with self.lock:

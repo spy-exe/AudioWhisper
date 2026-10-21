@@ -124,3 +124,27 @@ def test_a_damaged_audio_file_is_preserved_and_reported_without_preventing_start
     manager = CaptureManager(tmp_path, Client(), FakeAudio)
     assert manager.status()["recovery_errors"] == 1
     assert damaged.read_bytes() == b"invalid audio"
+
+
+def test_device_preparation_and_capture_run_on_the_same_windows_thread(tmp_path):
+    class ThreadBoundAudio(FakeAudio):
+        def prepare(self):
+            self.owner = threading.get_ident()
+
+        def run(self, consume, stop_event):
+            assert threading.get_ident() == self.owner
+            super().run(consume, stop_event)
+
+        def close(self):
+            assert threading.get_ident() == self.owner
+            super().close()
+
+    manager = CaptureManager(tmp_path, Client(), ThreadBoundAudio)
+    try:
+        manager.start("Teste", "system", {})
+        time.sleep(0.05)
+        manager.stop()
+        assert manager.status()["error"] is None
+        assert manager.status()["duration"] > 0
+    finally:
+        manager.close()
