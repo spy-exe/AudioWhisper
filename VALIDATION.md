@@ -66,6 +66,7 @@ Instale as dependências Python de desenvolvimento e o núcleo compartilhado. Ma
 
 ```powershell
 python -m pip install -e packages/core -r apps/api/requirements-dev.txt -r apps/worker/requirements-dev.txt
+New-Item -ItemType Directory -Force .devdata | Out-Null
 python -m pytest apps/api/tests -c apps/api/pytest.ini --basetemp=.devdata/pytest-api --cov=apps/api/app --cov=packages/core/src/audiowhisper_core --cov-fail-under=88
 python -m pytest apps/worker/tests -c apps/worker/pytest.ini --basetemp=.devdata/pytest-worker --cov=apps/worker/app --cov-fail-under=65
 ```

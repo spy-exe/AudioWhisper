@@ -82,7 +82,7 @@ jobs:
       - name: Tests and coverage
         run: >-
           python -m pytest apps/${{ matrix.service }}/tests -c apps/${{ matrix.service }}/pytest.ini
-          --basetemp=.devdata/pytest-${{ matrix.service }}
+          --basetemp=${{ runner.temp }}/pytest-${{ matrix.service }}
           ${{ matrix.coverage }} --cov-fail-under=${{ matrix.threshold }}
           --cov-report=term --cov-report=xml:coverage-${{ matrix.service }}.xml
       - uses: actions/upload-artifact@v7.0.2
