@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { formatDuration } from "@/lib/format";
 import { LiveAudio, type CapturedChunk } from "@/lib/live-audio";
+import { CaptureWakeLock, type CaptureWakeState } from "@/lib/capture-wake-lock";
 import {
   liveStore,
   type StoredCapture,
@@ -32,11 +33,17 @@ export function LiveStudio() {
   const [pending, setPending] = useState(0);
   const [seconds, setSeconds] = useState(0);
   const [level, setLevel] = useState(0);
+  const [keepAwake, setKeepAwake] = useState(true);
+  const [wakeState, setWakeState] = useState<CaptureWakeState>("released");
+  const [interrupted, setInterrupted] = useState(false);
+  const [sourceEnded, setSourceEnded] = useState(false);
   const engine = useRef<LiveAudio | null>(null);
   const writes = useRef<Promise<unknown>>(Promise.resolve());
   const uploads = useRef<Promise<unknown>>(Promise.resolve());
+  const recovering = useRef(false);
   const { job, newSegments, provisionalSegments, connectionError } =
     useJobProgress(capture?.jobId ?? null);
+  const completed = job?.status === "completed" && job.id === capture?.jobId;
 
   useEffect(() => {
     setSlot(
@@ -47,11 +54,13 @@ export function LiveStudio() {
     let active = true;
     liveStore
       .capture()
-      .then((saved) => {
+      .then(async (saved) => {
         if (active && saved) {
           captureRef.current = saved;
           setCapture(saved);
           setSeconds(saved.duration);
+          const chunks = await liveStore.chunks();
+          if (active) setPending(chunks.filter((chunk) => chunk.jobId === saved.jobId && !chunk.uploaded).length);
         }
       })
       .catch(() => {
@@ -65,11 +74,17 @@ export function LiveStudio() {
     };
   }, []);
   useEffect(() => {
-    if (!recording) return;
+    if (!recording && !pending) return;
     const prevent = (event: BeforeUnloadEvent) => event.preventDefault();
     window.addEventListener("beforeunload", prevent);
     return () => window.removeEventListener("beforeunload", prevent);
-  }, [recording]);
+  }, [recording, pending]);
+  useEffect(() => {
+    if (!recording || !keepAwake) return;
+    const guard = new CaptureWakeLock(setWakeState);
+    void guard.start();
+    return () => guard.stop();
+  }, [recording, keepAwake]);
   useEffect(() => () => engine.current?.release(), []);
   useEffect(() => {
     if (job?.status === "completed" && job.id === capture?.jobId) {
@@ -87,7 +102,7 @@ export function LiveStudio() {
     });
     const response = await fetch(
       `/api/live/${chunk.jobId}/chunks/${chunk.sequence}?${params}`,
-      { method: "POST", body },
+      { method: "POST", body, signal: AbortSignal.timeout(20000) },
     );
     if (!response.ok) {
       const data = await response.json().catch(() => null);
@@ -154,7 +169,7 @@ export function LiveStudio() {
       const result = await engine.current.stop();
       engine.current = null;
       setRecording(false);
-      await uploads.current;
+      await writes.current;
       const saved = { ...captureRef.current!, ...result };
       captureRef.current = saved;
       setCapture(saved);
@@ -163,6 +178,7 @@ export function LiveStudio() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(result),
+        signal: AbortSignal.timeout(20000),
       });
       if (!response.ok)
         throw new Error(
@@ -179,13 +195,25 @@ export function LiveStudio() {
     }
   }, [busy]);
 
+  useEffect(() => {
+    if (sourceEnded && recording && !busy) void stop();
+  }, [sourceEnded, recording, busy, stop]);
+
   const start = async () => {
     if (busy || capture) return;
     setBusy(true);
     setError("");
+    setInterrupted(false);
+    setSourceEnded(false);
     let created: StoredCapture | null = null;
     try {
-      // Verify persistence before requesting access to an audio source.
+      const audio = new LiveAudio(
+        (chunk) => { if (captureRef.current) queue(chunk, captureRef.current.jobId); },
+        (value, duration) => { setLevel(value); setSeconds(duration); },
+      );
+      engine.current = audio;
+      // getDisplayMedia requires the original user gesture, before server awaits.
+      await audio.prepare(source, device);
       await liveStore.chunks();
       const response = await fetch("/api/live", {
         method: "POST",
@@ -201,6 +229,7 @@ export function LiveStudio() {
             word_timestamps: true,
           },
         }),
+        signal: AbortSignal.timeout(20000),
       });
       if (!response.ok)
         throw new Error("Não foi possível criar a captura no servidor.");
@@ -214,40 +243,35 @@ export function LiveStudio() {
       captureRef.current = created;
       await liveStore.putCapture(created);
       setCapture(created);
-      const audio = new LiveAudio(
-        (chunk) => queue(chunk, next.id),
-        (value, duration) => {
-          setLevel(value);
-          setSeconds(duration);
-        },
-      );
-      engine.current = audio;
+      audio.onInterrupted = setInterrupted;
       audio.onEnded = () => {
-        setError(
-          "A fonte de áudio foi encerrada. Finalize a captura para consolidar o que foi gravado.",
-        );
+        setSourceEnded(true);
+        setError("A fonte de áudio foi encerrada. Consolidando os trechos já gravados.");
       };
       await audio.start(source, device);
       setRecording(true);
-      const list = await navigator.mediaDevices.enumerateDevices();
+      const list = await navigator.mediaDevices.enumerateDevices().catch(() => []);
       setDevices(list.filter((d) => d.kind === "audioinput"));
     } catch (e) {
       engine.current?.release();
       engine.current = null;
+      let retained: StoredCapture | null = null;
       if (created) {
         try {
-          await fetch(`/api/live/${created.jobId}/stop`, {
+          const response = await fetch(`/api/live/${created.jobId}/stop`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ expected_chunks: 0, duration: 0 }),
+            signal: AbortSignal.timeout(20000),
           });
+          if (!response.ok) throw new Error("Encerramento pendente");
           await liveStore.clear();
         } catch {
-          /* Keep recovery data when the server cannot confirm. */
+          retained = created;
         }
       }
-      captureRef.current = null;
-      setCapture(null);
+      captureRef.current = retained;
+      setCapture(retained);
       setError(
         e instanceof Error
           ? e.message
@@ -258,11 +282,14 @@ export function LiveStudio() {
     }
   };
 
-  const recover = async () => {
-    if (!capture || busy) return;
+  const recover = useCallback(async () => {
+    if (!capture || busy || recovering.current) return;
+    recovering.current = true;
     setBusy(true);
     setError("");
-    try {
+    // Serialize recovery with uploads already in flight and future audio updates.
+    const attempt = uploads.current.catch(() => undefined).then(async () => {
+      await writes.current;
       const all = (await liveStore.chunks()).filter(
         (c) => c.jobId === capture.jobId,
       );
@@ -298,13 +325,19 @@ export function LiveStudio() {
             expected_chunks: expected,
             duration: capture.duration,
           }),
+          signal: AbortSignal.timeout(20000),
         });
         if (!response.ok)
           throw new Error(
             "Servidor indisponível. Os trechos continuam preservados neste navegador.",
           );
-        await fetch(`/api/live/${capture.jobId}/retry`, { method: "POST" });
+        const retried = await fetch(`/api/live/${capture.jobId}/retry`, { method: "POST", signal: AbortSignal.timeout(20000) });
+        if (!retried.ok) throw new Error("O áudio foi enviado, mas o processamento aguarda nova tentativa.");
       }
+    });
+    uploads.current = attempt.catch(() => undefined);
+    try {
+      await attempt;
     } catch (e) {
       setError(
         e instanceof Error
@@ -312,12 +345,24 @@ export function LiveStudio() {
           : "Não foi possível recuperar a captura.",
       );
     } finally {
+      recovering.current = false;
       setBusy(false);
     }
-  };
+  }, [capture, busy, recording, upload]);
+
+  const needsRetry = pending > 0;
+  useEffect(() => {
+    if (!capture || completed) return;
+    const retry = () => { if (navigator.onLine) void recover(); };
+    window.addEventListener("online", retry);
+    const timer = needsRetry ? window.setInterval(retry, 15000) : undefined;
+    return () => {
+      window.removeEventListener("online", retry);
+      window.clearInterval(timer);
+    };
+  }, [capture, completed, needsRetry, recover]);
 
   if (pathname.startsWith("/shared/")) return null;
-  const completed = job?.status === "completed" && job.id === capture?.jobId;
   const controls = (
     <section
       className="capture-panel space-y-5"
@@ -430,6 +475,13 @@ export function LiveStudio() {
         </div>
       )}
       {!capture && (
+        <label className="flex cursor-pointer items-start gap-3 text-xs leading-relaxed text-text-secondary">
+          <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-accent"
+            checked={keepAwake} onChange={(event) => setKeepAwake(event.target.checked)} />
+          Manter a tela ativa durante a gravação, quando permitido pelo navegador
+        </label>
+      )}
+      {!capture && (
         <Button disabled={busy || !settings} variant="primary" onClick={start} className="w-full">
           <Icon name="mic" />
           {busy ? "Preparando…" : "Iniciar captura"}
@@ -442,8 +494,10 @@ export function LiveStudio() {
         </p>
       )}
       {recording && (
-        <div className="flex items-center gap-4">
-          <span className="text-xs text-success">● Gravando</span>
+        <div className="flex flex-wrap items-center gap-4">
+          <span className={`text-xs ${interrupted ? "text-warning" : "text-success"}`}>
+            {interrupted ? "Áudio suspenso" : "● Gravando"}
+          </span>
           <div
             className="h-2 flex-1 overflow-hidden rounded-full bg-surface-interactive"
             aria-label="Nível de áudio"
@@ -461,6 +515,19 @@ export function LiveStudio() {
             Encerrar captura
           </Button>
         </div>
+      )}
+      {recording && interrupted && (
+        <div role="alert" className="space-y-3 text-xs leading-relaxed text-warning">
+          <p>O navegador suspendeu a entrada de áudio. Retome para continuar a gravação.</p>
+          <Button size="sm" onClick={() => { void engine.current?.resume().catch(() => setError("Não foi possível retomar o áudio. Verifique a fonte selecionada.")); }}>
+            Retomar áudio
+          </Button>
+        </div>
+      )}
+      {recording && keepAwake && (
+        <p className="text-xs leading-relaxed text-text-muted" role="status">
+          {wakeState === "active" ? "Tela ativa durante a captura." : "Proteção de tela indisponível nesta aba. Evite suspender o computador nas configurações do Windows."}
+        </p>
       )}
       {capture && (
         <div className="flex flex-wrap items-center gap-3">

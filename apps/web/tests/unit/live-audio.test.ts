@@ -5,8 +5,10 @@ const track = { stop: vi.fn(), addEventListener: vi.fn() };
 const stream = { getTracks: () => [track], getAudioTracks: () => [track] };
 let port: { onmessage: ((message: { data: Float32Array | { flushed: true } }) => void) | null; postMessage: (message: string) => void };
 let close: ReturnType<typeof vi.fn>;
+const contexts: { state: AudioContextState; onstatechange: (() => void) | null; resume: ReturnType<typeof vi.fn> }[] = [];
 
 beforeEach(() => {
+  contexts.length = 0;
   Object.defineProperty(window, "isSecureContext", { configurable: true, value: true });
   Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: {
     getUserMedia: vi.fn().mockResolvedValue(stream),
@@ -14,6 +16,9 @@ beforeEach(() => {
   } });
   close = vi.fn().mockResolvedValue(undefined);
   vi.stubGlobal("AudioContext", class {
+    state: AudioContextState = "running";
+    onstatechange: (() => void) | null = null;
+    constructor() { contexts.push(this); }
     sampleRate = 16000;
     destination = {};
     audioWorklet = { addModule: vi.fn().mockResolvedValue(undefined) };
@@ -118,4 +123,32 @@ it("notifies the caller when the user ends desktop sharing through the video tra
   videoTrack.addEventListener.mock.calls.find(([event]) => event === "ended")![1]();
   expect(audio.onEnded).toHaveBeenCalledOnce();
   audio.release();
+});
+
+it("acquires the desktop permission before server work without asking twice", async () => {
+  vi.mocked(navigator.mediaDevices.getDisplayMedia).mockResolvedValue(stream as unknown as MediaStream);
+  const audio = new LiveAudio(vi.fn(), vi.fn());
+  await audio.prepare("system", "");
+  expect(navigator.mediaDevices.getDisplayMedia).toHaveBeenCalledOnce();
+  await audio.start("system", "");
+  expect(navigator.mediaDevices.getDisplayMedia).toHaveBeenCalledOnce();
+  audio.release();
+});
+
+it("reports an interrupted audio engine and resumes when the window regains focus", async () => {
+  const audio = new LiveAudio(vi.fn(), vi.fn());
+  audio.onInterrupted = vi.fn();
+  await audio.start("microphone", "");
+  const context = contexts[0]!;
+  context.resume.mockClear();
+  context.state = "suspended";
+  context.onstatechange!();
+  expect(audio.onInterrupted).toHaveBeenLastCalledWith(true);
+  context.resume.mockImplementation(async () => { context.state = "running"; });
+  window.dispatchEvent(new Event("focus"));
+  await vi.waitFor(() => expect(audio.onInterrupted).toHaveBeenLastCalledWith(false));
+  expect(context.resume).toHaveBeenCalledOnce();
+  audio.release();
+  window.dispatchEvent(new Event("focus"));
+  expect(context.resume).toHaveBeenCalledOnce();
 });

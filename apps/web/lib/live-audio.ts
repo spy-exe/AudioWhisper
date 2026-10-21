@@ -51,11 +51,14 @@ export class LiveAudio {
   private revision = 0;
   private flushed: (() => void) | null = null;
   onEnded?: () => void;
+  onInterrupted?: (interrupted: boolean) => void;
   constructor(
     private onChunk: (chunk: CapturedChunk) => void,
     private onLevel: (level: number, seconds: number) => void,
   ) {}
-  async start(source: string, deviceId: string) {
+  // Ask from the click handler, before persistence/network awaits consume user activation.
+  async prepare(source: string, deviceId: string) {
+    if (this.streams.length) return;
     try {
       if (!window.isSecureContext || !navigator.mediaDevices)
         throw new Error("A captura requer localhost ou uma conexão HTTPS.");
@@ -96,6 +99,16 @@ export class LiveAudio {
           }),
         );
       }
+    } catch (error) {
+      this.release();
+      throw error;
+    }
+  }
+  async start(source: string, deviceId: string) {
+    try {
+      await this.prepare(source, deviceId);
+      if (this.streams.some((stream) => stream.getTracks().some((track) => track.readyState === "ended")))
+        throw new Error("A fonte foi encerrada antes da captura começar. Selecione-a novamente.");
       this.context = new AudioContext({ sampleRate: 16000 });
       if (this.context.sampleRate !== 16000)
         throw new Error(
@@ -122,11 +135,26 @@ export class LiveAudio {
           track.addEventListener("ended", () => this.onEnded?.()),
         );
       await this.context.resume();
+      this.context.onstatechange = () => {
+        if (this.context?.state === "closed") this.onEnded?.();
+        else this.onInterrupted?.(this.context?.state !== "running");
+      };
+      document.addEventListener("visibilitychange", this.restore);
+      window.addEventListener("focus", this.restore);
     } catch (error) {
       this.release();
       throw error;
     }
   }
+  async resume() {
+    if (!this.context) return;
+    if (this.context.state !== "running") await this.context.resume();
+    this.onInterrupted?.(this.context.state !== "running");
+  }
+  private restore = () => {
+    if (document.visibilityState === "visible")
+      void this.resume().catch(() => this.onInterrupted?.(true));
+  };
   private receive(frame: Float32Array) {
     this.total += frame.length;
     const rms = Math.sqrt(
@@ -204,12 +232,17 @@ export class LiveAudio {
     return result;
   }
   release() {
+    document.removeEventListener("visibilitychange", this.restore);
+    window.removeEventListener("focus", this.restore);
     this.node?.disconnect();
     this.node = null;
     for (const stream of this.streams)
       stream.getTracks().forEach((track) => track.stop());
     this.streams = [];
-    void this.context?.close();
+    if (this.context) {
+      this.context.onstatechange = null;
+      void this.context.close();
+    }
     this.context = null;
   }
 }
