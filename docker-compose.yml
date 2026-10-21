@@ -1,0 +1,151 @@
+services:
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks: [audiowhisper]
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DB_PATH: /data/db/audiowhisper.db
+      UPLOADS_DIR: /data/uploads
+      EXPORTS_DIR: /data/exports
+      TMP_DIR: /data/tmp
+      MODEL_CACHE_DIR: /data/models
+      REDIS_URL: redis://redis:6379/0
+      ACCESS_TOKEN: ${ACCESS_TOKEN:-}
+      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-5368709120}
+      ENVIRONMENT: production
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      HF_TOKEN: ${HF_TOKEN:-}
+      DIARIZATION_MODEL: ${DIARIZATION_MODEL:-pyannote/speaker-diarization-community-1}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-true}
+    volumes:
+      - db_data:/data/db
+      - uploads_data:/data/uploads
+      - exports_data:/data/exports
+      - tmp_data:/data/tmp
+      - model_cache:/data/models
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/health', timeout=3).status==200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+    networks: [audiowhisper]
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+      args:
+        INSTALL_DIARIZATION: ${INSTALL_DIARIZATION:-true}
+    environment:
+      DB_PATH: /data/db/audiowhisper.db
+      UPLOADS_DIR: /data/uploads
+      EXPORTS_DIR: /data/exports
+      TMP_DIR: /data/tmp
+      MODEL_CACHE_DIR: /data/models
+      REDIS_URL: redis://redis:6379/0
+      TRANSCRIPTION_DEVICE: ${TRANSCRIPTION_DEVICE:-cuda}
+      TRANSCRIPTION_COMPUTE_TYPE: ${TRANSCRIPTION_COMPUTE_TYPE:-float16}
+      DEFAULT_MODEL: ${DEFAULT_MODEL:-turbo}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ENVIRONMENT: production
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      HF_TOKEN: ${HF_TOKEN:-}
+      DIARIZATION_MODEL: ${DIARIZATION_MODEL:-pyannote/speaker-diarization-community-1}
+      PYANNOTE_METRICS_ENABLED: "0"
+      HF_HOME: /data/models/huggingface
+    volumes:
+      - db_data:/data/db
+      - uploads_data:/data/uploads
+      - exports_data:/data/exports
+      - tmp_data:/data/tmp
+      - model_cache:/data/models
+    depends_on:
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import redis,os,time,sys; r=redis.from_url(os.environ['REDIS_URL']); hb=r.get('worker:heartbeat'); sys.exit(0 if hb and time.time()-float(hb)<60 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    restart: unless-stopped
+    networks: [audiowhisper]
+    # GPU device access is granted by the docker-compose.gpu.yml override (see `make up`),
+    # never by default — this base file alone runs anywhere, falling back to CPU.
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      NODE_ENV: production
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+    networks: [audiowhisper]
+
+  gateway:
+    image: caddy:2-alpine
+    ports:
+      - "${HOST_PORT:-8080}:8080"
+    volumes:
+      - ./infra/gateway/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+    networks: [audiowhisper]
+
+volumes:
+  db_data:
+  uploads_data:
+  exports_data:
+  tmp_data:
+  model_cache:
+  redis_data:
+
+networks:
+  audiowhisper:
+    driver: bridge

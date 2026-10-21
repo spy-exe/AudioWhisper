@@ -1,0 +1,31 @@
+# env
+.env
+.env.local
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.venv-dev/
+*.egg-info/
+.pytest_cache/
+.devdata/
+**/.pytest_data/
+
+# node
+node_modules/
+.next/
+out/
+playwright-report/
+test-results/
+*.tsbuildinfo
+next-env.d.ts
+
+# misc
+.DS_Store
+*.log
+coverage/
+htmlcov/
+.coverage*
+coverage.xml
+coverage-*.xml

@@ -1,0 +1,271 @@
+{
+  "checks": [
+    {
+      "page": "studio",
+      "width": 320,
+      "scroll": 310,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 42,
+      "transcriptFont": null,
+      "overflow": []
+    },
+    {
+      "page": "library",
+      "width": 320,
+      "scroll": 310,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 42,
+      "transcriptFont": null,
+      "overflow": []
+    },
+    {
+      "page": "settings",
+      "width": 320,
+      "scroll": 310,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 42,
+      "transcriptFont": null,
+      "overflow": []
+    },
+    {
+      "page": "workspace",
+      "width": 320,
+      "scroll": 310,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 34,
+      "transcriptFont": 19,
+      "overflow": []
+    },
+    {
+      "page": "studio",
+      "width": 390,
+      "scroll": 380,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 42,
+      "transcriptFont": null,
+      "overflow": []
+    },
+    {
+      "page": "library",
+      "width": 390,
+      "scroll": 380,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 42,
+      "transcriptFont": null,
+      "overflow": []
+    },
+    {
+      "page": "settings",
+      "width": 390,
+      "scroll": 380,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 42,
+      "transcriptFont": null,
+      "overflow": []
+    },
+    {
+      "page": "workspace",
+      "width": 390,
+      "scroll": 380,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 34,
+      "transcriptFont": 19,
+      "overflow": []
+    },
+    {
+      "page": "studio",
+      "width": 768,
+      "scroll": 758,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 42,
+      "transcriptFont": null,
+      "overflow": []
+    },
+    {
+      "page": "library",
+      "width": 768,
+      "scroll": 758,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 42,
+      "transcriptFont": null,
+      "overflow": []
+    },
+    {
+      "page": "settings",
+      "width": 768,
+      "scroll": 758,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 42,
+      "transcriptFont": null,
+      "overflow": []
+    },
+    {
+      "page": "workspace",
+      "width": 768,
+      "scroll": 758,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 34,
+      "transcriptFont": 19,
+      "overflow": []
+    },
+    {
+      "page": "studio",
+      "width": 1024,
+      "scroll": 1014,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 42,
+      "transcriptFont": null,
+      "overflow": []
+    },
+    {
+      "page": "library",
+      "width": 1024,
+      "scroll": 1014,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 42,
+      "transcriptFont": null,
+      "overflow": []
+    },
+    {
+      "page": "settings",
+      "width": 1024,
+      "scroll": 1014,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 42,
+      "transcriptFont": null,
+      "overflow": []
+    },
+    {
+      "page": "workspace",
+      "width": 1024,
+      "scroll": 1014,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 34,
+      "transcriptFont": 19,
+      "overflow": []
+    },
+    {
+      "page": "studio",
+      "width": 1440,
+      "scroll": 1430,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 42,
+      "transcriptFont": null,
+      "overflow": []
+    },
+    {
+      "page": "library",
+      "width": 1440,
+      "scroll": 1430,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 42,
+      "transcriptFont": null,
+      "overflow": []
+    },
+    {
+      "page": "settings",
+      "width": 1440,
+      "scroll": 1430,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 42,
+      "transcriptFont": null,
+      "overflow": []
+    },
+    {
+      "page": "workspace",
+      "width": 1440,
+      "scroll": 1430,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 34,
+      "transcriptFont": 19,
+      "overflow": []
+    },
+    {
+      "page": "studio",
+      "width": 1920,
+      "scroll": 1910,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 42,
+      "transcriptFont": null,
+      "overflow": []
+    },
+    {
+      "page": "library",
+      "width": 1920,
+      "scroll": 1910,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 42,
+      "transcriptFont": null,
+      "overflow": []
+    },
+    {
+      "page": "settings",
+      "width": 1920,
+      "scroll": 1910,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 42,
+      "transcriptFont": null,
+      "overflow": []
+    },
+    {
+      "page": "workspace",
+      "width": 1920,
+      "scroll": 1910,
+      "bodyFont": 17,
+      "smallestField": 16,
+      "smallestControl": 34,
+      "transcriptFont": 19,
+      "overflow": []
+    }
+  ],
+  "states": [
+    "library-error",
+    "library-empty",
+    "library-loading"
+  ],
+  "audits": [
+    {
+      "page": "workspace",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "page": "workspace",
+      "width": 1440,
+      "violations": []
+    }
+  ],
+  "motion": {
+    "samples": 120,
+    "medianMs": 16.699999999999818,
+    "p95Ms": 16.799999999999955,
+    "framesOver50Ms": 0
+  },
+  "errors": [],
+  "expectedConsoleErrors": [
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "date": "2026-10-21",
+  "web": {
+    "tests": 55,
+    "lines": {
+      "total": 1595,
+      "covered": 771,
+      "skipped": 0,
+      "pct": 48.33
+    },
+    "statements": {
+      "total": 1764,
+      "covered": 821,
+      "skipped": 0,
+      "pct": 46.54
+    },
+    "functions": {
+      "total": 521,
+      "covered": 203,
+      "skipped": 0,
+      "pct": 38.96
+    },
+    "branches": {
+      "total": 1137,
+      "covered": 526,
+      "skipped": 0,
+      "pct": 46.26
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    },
+    "criticalModules": {
+      "components/jobs/LibraryView.tsx": {
+        "lines": 91.04,
+        "branches": 66.66
+      },
+      "components/ui/AuthGate.tsx": {
+        "lines": 100,
+        "branches": 93.75
+      },
+      "components/workspace/AIWorkspace.tsx": {
+        "lines": 88.05,
+        "branches": 77.35
+      },
+      "components/workspace/DocumentView.tsx": {
+        "lines": 86.66,
+        "branches": 93.87
+      },
+      "lib/live-audio.ts": {
+        "lines": 97.47,
+        "branches": 88.37
+      }
+    }
+  },
+  "backend": {
+    "api": {
+      "tests": 70,
+      "lines": {
+        "covered": 1653,
+        "total": 1862,
+        "pct": 88.78
+      }
+    },
+    "worker": {
+      "tests": 32,
+      "lines": {
+        "covered": 435,
+        "total": 656,
+        "pct": 66.31
+      }
+    }
+  }
+}

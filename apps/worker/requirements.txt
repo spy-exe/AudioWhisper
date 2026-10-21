@@ -1,0 +1,4 @@
+faster-whisper==1.2.1
+rq==1.16.2
+redis==5.0.8
+av>=11,<19
