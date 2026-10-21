@@ -89,3 +89,33 @@ it("uses the chosen OBS input without microphone speech filters", async () => {
   } });
   audio.release();
 });
+
+it("offers desktop audio and mixes the selected microphone", async () => {
+  const videoTrack = { ...track, kind: "video" };
+  vi.mocked(navigator.mediaDevices.getDisplayMedia).mockResolvedValue({
+    getTracks: () => [track, videoTrack], getAudioTracks: () => [track],
+  } as unknown as MediaStream);
+  const audio = new LiveAudio(vi.fn(), vi.fn());
+  await audio.start("mixed", "meeting-mic");
+  expect(navigator.mediaDevices.getDisplayMedia).toHaveBeenCalledWith(expect.objectContaining({
+    audio: true, systemAudio: "include", video: expect.objectContaining({ displaySurface: "monitor" }),
+  }));
+  expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({ audio: {
+    deviceId: { exact: "meeting-mic" }, echoCancellation: true, noiseSuppression: true, channelCount: 1,
+  } });
+  audio.release();
+});
+
+it("notifies the caller when the user ends desktop sharing through the video track", async () => {
+  const videoTrack = { stop: vi.fn(), addEventListener: vi.fn() };
+  vi.mocked(navigator.mediaDevices.getDisplayMedia).mockResolvedValue({
+    getTracks: () => [track, videoTrack], getAudioTracks: () => [track],
+  } as unknown as MediaStream);
+  const audio = new LiveAudio(vi.fn(), vi.fn());
+  audio.onEnded = vi.fn();
+  await audio.start("system", "");
+  expect(videoTrack.addEventListener).toHaveBeenCalledWith("ended", expect.any(Function));
+  videoTrack.addEventListener.mock.calls.find(([event]) => event === "ended")![1]();
+  expect(audio.onEnded).toHaveBeenCalledOnce();
+  audio.release();
+});

@@ -40,6 +40,19 @@ afterEach(() => {
   document.getElementById("live-capture-slot")?.remove();
 });
 
+it("makes desktop capture discoverable and explains the sharing permission", async () => {
+  const slot = document.createElement("div");
+  slot.id = "live-capture-slot";
+  document.body.append(slot);
+  const { unmount } = render(<LiveStudio />);
+  const desktop = await screen.findByRole("radio", { name: /Desktop e microfone/ });
+  fireEvent.click(desktop);
+  expect(desktop).toBeChecked();
+  expect(screen.getByText(/Compartilhar áudio/)).toBeVisible();
+  expect(screen.getByText(/mantenha esta aba aberta/i)).toBeVisible();
+  unmount();
+});
+
 it("preserves new audio locally while an earlier upload is still pending", async () => {
   const slot = document.createElement("div");
   slot.id = "live-capture-slot";

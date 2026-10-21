@@ -348,32 +348,40 @@ export function LiveStudio() {
         )}
       </div>
       {!capture && (
-        <div className="capture-inputs">
+        <div className="space-y-4">
           <input
             aria-label="Título da captura"
-            className="field flex-1 basis-48"
+            className="field w-full"
             placeholder="Dê um nome à conversa…"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
-          <select
-            aria-label="Fonte de áudio"
-            className="field w-auto"
-            value={source}
-            onChange={(e) => setSource(e.target.value)}
-          >
-            <option value="microphone">Microfone</option>
-            <option value="system">Áudio do computador</option>
-            <option value="mixed">Microfone + computador</option>
-            <option value="obs">OBS / entrada virtual</option>
-          </select>
-          <Button
-            disabled={busy || !settings}
-            variant="primary"
-            onClick={start}
-          >
-            {busy ? "Preparando…" : "Iniciar captura"}
-          </Button>
+          <fieldset disabled={busy}>
+            <legend className="mb-3 text-sm font-semibold">O que você quer gravar?</legend>
+            <div className="capture-sources">
+              {[
+                { value: "microphone", label: "Microfone", description: "Sua voz e o ambiente" },
+                { value: "system", label: "Áudio do desktop", description: "O som dos aplicativos" },
+                { value: "mixed", label: "Desktop e microfone", description: "A conversa dos dois lados" },
+                { value: "obs", label: "OBS / entrada virtual", description: "Uma entrada de áudio dedicada" },
+              ].map((option) => (
+                <label key={option.value} className="capture-source">
+                  <input type="radio" name="capture-source" value={option.value}
+                    checked={source === option.value} onChange={() => setSource(option.value)} />
+                  <span>
+                    <span className="block text-sm font-semibold">{option.label}</span>
+                    <span className="mt-1 block text-xs text-text-muted">{option.description}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          {(source === "system" || source === "mixed") && (
+            <p className="rounded-lg border border-accent/25 bg-accent/5 p-3 text-xs leading-relaxed text-text-secondary">
+              No Chrome ou Edge, selecione a tela ou aba e marque <strong>Compartilhar áudio</strong>.
+              {" "}Somente o áudio é gravado; o vídeo da tela não é salvo.
+            </p>
+          )}
         </div>
       )}
       {!capture && source !== "system" && (
@@ -420,6 +428,18 @@ export function LiveStudio() {
             </p>
           )}
         </div>
+      )}
+      {!capture && (
+        <Button disabled={busy || !settings} variant="primary" onClick={start} className="w-full">
+          <Icon name="mic" />
+          {busy ? "Preparando…" : "Iniciar captura"}
+        </Button>
+      )}
+      {!completed && (
+        <p className="text-xs leading-relaxed text-text-muted">
+          Pode minimizar ou trocar de aba. Mantenha esta aba aberta e o computador ligado durante a captura.
+          {" "}O Whisper processa os trechos em segundo plano.
+        </p>
       )}
       {recording && (
         <div className="flex items-center gap-4">

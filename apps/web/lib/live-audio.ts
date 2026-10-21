@@ -60,10 +60,16 @@ export class LiveAudio {
       if (!window.isSecureContext || !navigator.mediaDevices)
         throw new Error("A captura requer localhost ou uma conexão HTTPS.");
       if (source === "system" || source === "mixed") {
-        const screen = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
+        if (!navigator.mediaDevices.getDisplayMedia)
+          throw new Error("Áudio do desktop requer Chrome ou Edge no computador. Use OBS / entrada virtual como alternativa.");
+        const displayOptions: DisplayMediaStreamOptions & { systemAudio: string; surfaceSwitching: string; selfBrowserSurface: string } = {
+          video: { displaySurface: "monitor" },
           audio: true,
-        });
+          systemAudio: "include",
+          surfaceSwitching: "exclude",
+          selfBrowserSurface: "exclude",
+        };
+        const screen = await navigator.mediaDevices.getDisplayMedia(displayOptions);
         this.streams.push(screen);
         if (!screen.getAudioTracks().length)
           throw new Error(
@@ -72,7 +78,10 @@ export class LiveAudio {
         if (source === "mixed")
           this.streams.push(
             await navigator.mediaDevices.getUserMedia({
-              audio: { echoCancellation: true, noiseSuppression: true },
+              audio: {
+                deviceId: deviceId ? { exact: deviceId } : undefined,
+                echoCancellation: true, noiseSuppression: true, channelCount: 1,
+              },
             }),
           );
       } else {
@@ -108,7 +117,7 @@ export class LiveAudio {
         else this.flushed?.();
       };
       this.streams
-        .flatMap((stream) => stream.getAudioTracks())
+        .flatMap((stream) => stream.getTracks())
         .forEach((track) =>
           track.addEventListener("ended", () => this.onEnded?.()),
         );
