@@ -22,4 +22,3 @@ Teste de comportamento antes da implementação; integração API/banco; worker 
 
 ## Limites
 Sempre: migração aditiva, autenticação existente, paginação, referências verificáveis e revisão explícita de documentos. Alterações de esquema, rotas e UI necessárias a este escopo estão autorizadas. Nunca: apagar gravações, enviar conteúdo automaticamente, publicar conteúdo pessoal ou segredos. Provedor local já instalado; nenhuma nova dependência de execução prevista.
-

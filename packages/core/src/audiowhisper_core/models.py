@@ -163,6 +163,41 @@ class AIDocument(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
 
 
+class ActionTask(Base):
+    __tablename__ = "action_tasks"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    title: Mapped[str] = mapped_column(String(512))
+    description: Mapped[str] = mapped_column(Text, default="")
+    project: Mapped[str] = mapped_column(String(128), default="", index=True)
+    status: Mapped[str] = mapped_column(String(16), default="open", index=True)
+    priority: Mapped[str] = mapped_column(String(16), default="normal")
+    assignee: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    due_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    due_label: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    job_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("transcription_jobs.id", ondelete="SET NULL"), nullable=True)
+    document_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("ai_documents.id", ondelete="SET NULL"), nullable=True)
+    import_key: Mapped[str | None] = mapped_column(String(96), unique=True, nullable=True)
+    sources_json: Mapped[str] = mapped_column(Text, default="[]")
+    archived: Mapped[bool] = mapped_column(Boolean, default=False)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+
+
+class NotebookEntry(Base):
+    __tablename__ = "notebook_entries"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    job_id: Mapped[str] = mapped_column(String(36), ForeignKey("transcription_jobs.id", ondelete="CASCADE"), index=True)
+    title: Mapped[str] = mapped_column(String(512))
+    body: Mapped[str] = mapped_column(Text, default="")
+    kind: Mapped[str] = mapped_column(String(16), default="note")
+    sources_json: Mapped[str] = mapped_column(Text)
+    archived: Mapped[bool] = mapped_column(Boolean, default=False)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+
+
 class DocumentShare(Base):
     __tablename__ = "document_shares"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
