@@ -137,6 +137,15 @@ class WorkspaceItem(Base):
     diarization_error: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
+class Project(Base):
+    __tablename__ = "projects"
+    name: Mapped[str] = mapped_column(String(128), primary_key=True)
+    description: Mapped[str] = mapped_column(Text, default="")
+    color: Mapped[str] = mapped_column(String(16), default="blue")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+
+
 class AIDocument(Base):
     __tablename__ = "ai_documents"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)

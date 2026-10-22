@@ -6,7 +6,7 @@ from audiowhisper_core.config import get_settings
 from app.dependencies import require_access_token
 from app.error_handlers import register_error_handlers
 from app.request_context import RequestContextMiddleware
-from app.routers import documents, exports, health, jobs, library, live, media, session, settings, sharing, speakers, ws
+from app.routers import documents, exports, health, jobs, library, live, media, projects, search, session, settings, sharing, speakers, ws
 
 settings_obj = get_settings()
 
@@ -35,6 +35,8 @@ app.include_router(settings.router)
 app.include_router(media.router)
 app.include_router(jobs.router)
 app.include_router(library.router)
+app.include_router(projects.router)
+app.include_router(search.router)
 app.include_router(documents.router)
 app.include_router(session.router)
 app.include_router(sharing.router)
