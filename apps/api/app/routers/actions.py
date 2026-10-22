@@ -54,9 +54,12 @@ def task_out(task, current):
 
 @router.get("")
 def tasks(project: str = Query(default="", max_length=128), q: str = Query(default="", max_length=200),
+          task_id: str = Query(default="", max_length=36),
           status: Literal["all", "open", "doing", "done"] = "all", archived: bool = False,
           offset: int = Query(default=0, ge=0), limit: int = Query(default=30, ge=1, le=100), db: Session = Depends(get_db)):
     conditions = [ActionTask.archived == archived]
+    if task_id:
+        conditions.append(ActionTask.id == task_id)
     if project:
         conditions.append(ActionTask.project == project)
     if status != "all":
