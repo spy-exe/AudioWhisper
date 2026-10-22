@@ -231,6 +231,8 @@ def process_transcription_job(job_id: str) -> None:
             real_time_factor=real_time_factor,
         )
         publish(JobStatus.COMPLETED, 1.0, "Concluído", language_detected=info.language)
+        from app.workspace_tasks import schedule_recipes
+        schedule_recipes(job_id)
         logger.info(
             "job_completed",
             extra={"job_id": job_id, "stage": "completed", "duration_ms": round(processing_seconds * 1000)},

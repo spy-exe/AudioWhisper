@@ -63,3 +63,16 @@ def test_evidence_search_returns_exact_sources_and_isolates_project_speaker_and_
     assert client.get("/api/search", params={**query, "speaker": "Pessoa ausente"}).json()["total"] == 0
     assert client.get("/api/search", params={"q": ""}).json()["items"] == []
     assert client.get("/api/search", params={"q": "a", "limit": 10000}).status_code == 422
+
+
+def test_search_index_handles_accents_and_tracks_text_edits_and_deletion(client):
+    project = f"Índice-{uuid.uuid4().hex}"
+    job, segment = seed(project, text="REVISÃO dos alertas de infraestrutura.")
+    assert client.get("/api/search", params={"q": "revisao", "project": project}).json()["total"] == 1
+    with session_scope() as db:
+        db.get(TranscriptSegment, segment).text = "Monitoramento corrigido."
+    assert client.get("/api/search", params={"q": "revisao", "project": project}).json()["total"] == 0
+    assert client.get("/api/search", params={"q": "monitor", "project": project}).json()["total"] == 1
+    with session_scope() as db:
+        db.delete(db.get(TranscriptSegment, segment))
+    assert client.get("/api/search", params={"q": "monitor", "project": project}).json()["total"] == 0

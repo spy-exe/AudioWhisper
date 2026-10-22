@@ -68,8 +68,11 @@ def validate_evidence(output: EvidenceOutput, segments):
 
 
 def evidence_source(segment, speakers):
-    return {"id": segment.id, "start": segment.start,
-            "speaker": speakers.get(segment.speaker_id, segment.speaker_id), "text": segment.text}
+    source = {"id": segment.id, "start": segment.start,
+              "speaker": speakers.get(segment.speaker_id, segment.speaker_id), "text": segment.text}
+    if getattr(segment, "recording", None):
+        source["recording"] = segment.recording
+    return source
 
 
 def evidence_batches(segments, speakers, max_bytes=14000):

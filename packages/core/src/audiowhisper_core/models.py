@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from audiowhisper_core.enums import ExportFormat, JobStatus, MediaType
@@ -194,6 +194,51 @@ class NotebookEntry(Base):
     sources_json: Mapped[str] = mapped_column(Text)
     archived: Mapped[bool] = mapped_column(Boolean, default=False)
     revision: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+
+
+class KnowledgeQuestion(Base):
+    __tablename__ = "knowledge_questions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    question: Mapped[str] = mapped_column(Text)
+    project: Mapped[str] = mapped_column(String(128), default="", index=True)
+    job_ids_json: Mapped[str] = mapped_column(Text, default="[]")
+    model: Mapped[str] = mapped_column(String(128))
+    status: Mapped[str] = mapped_column(String(16), default="queued")
+    sources_json: Mapped[str] = mapped_column(Text, default="[]")
+    items_json: Mapped[str] = mapped_column(Text, default="[]")
+    retrieval_count: Mapped[int] = mapped_column(Integer, default=0)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+
+
+class DocumentRecipe(Base):
+    __tablename__ = "document_recipes"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    name: Mapped[str] = mapped_column(String(128))
+    project: Mapped[str] = mapped_column(String(128), default="", index=True)
+    kind: Mapped[str] = mapped_column(String(32))
+    model: Mapped[str] = mapped_column(String(128))
+    instruction: Mapped[str] = mapped_column(Text, default="")
+    automatic: Mapped[bool] = mapped_column(Boolean, default=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+
+
+class RecipeRun(Base):
+    __tablename__ = "recipe_runs"
+    __table_args__ = (UniqueConstraint("recipe_id", "job_id", name="uq_recipe_job"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    recipe_id: Mapped[str] = mapped_column(String(36), ForeignKey("document_recipes.id", ondelete="CASCADE"), index=True)
+    job_id: Mapped[str] = mapped_column(String(36), ForeignKey("transcription_jobs.id", ondelete="CASCADE"), index=True)
+    document_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("ai_documents.id", ondelete="SET NULL"), nullable=True)
+    payload_json: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(16), default="queued")
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
 

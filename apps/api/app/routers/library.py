@@ -7,7 +7,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from audiowhisper_core.enums import TERMINAL_STATUSES
-from audiowhisper_core.models import MediaFile, TranscriptionJob, TranscriptSegment, WorkspaceItem
+from audiowhisper_core.models import DocumentRecipe, MediaFile, TranscriptionJob, TranscriptSegment, WorkspaceItem
 from audiowhisper_core.schemas import TranscriptionJobOut
 from app.dependencies import get_db
 from app.services.job_service import get_job_or_404
@@ -72,7 +72,7 @@ def get_organization(job_id: str, db: Session = Depends(get_db)):
 
 @router.put("/{job_id}")
 def organize(job_id: str, payload: OrganizationIn, db: Session = Depends(get_db)):
-    get_job_or_404(db, job_id)
+    job = get_job_or_404(db, job_id)
     item = db.get(WorkspaceItem, job_id)
     if not item:
         item = WorkspaceItem(job_id=job_id)
@@ -81,4 +81,11 @@ def organize(job_id: str, payload: OrganizationIn, db: Session = Depends(get_db)
     item.tags_json = json.dumps(list(dict.fromkeys(t.strip()[:128] for t in payload.tags if t.strip())))
     item.speakers_json = json.dumps({k[:64]: v.strip()[:128] for k, v in payload.speakers.items() if v.strip()})
     db.commit()
+    if job.status == "completed" and item.project and db.scalar(select(DocumentRecipe.id).where(
+            DocumentRecipe.project == item.project, DocumentRecipe.enabled.is_(True), DocumentRecipe.automatic.is_(True)).limit(1)):
+        try:
+            from app.queue import get_queue
+            get_queue().enqueue("app.workspace_tasks.schedule_recipes", job_id, job_timeout=60)
+        except Exception:
+            pass  # Startup recovery also reconciles completed recordings and recipes.
     return workspace_out(item)

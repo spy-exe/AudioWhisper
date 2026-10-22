@@ -1,13 +1,23 @@
 """Recover durable work after a restart of the single local worker."""
 import uuid
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from audiowhisper_core.db import session_scope
-from audiowhisper_core.models import AIDocument, LiveChunk, LiveSession, TranscriptionJob, TranscriptSegment, WorkspaceItem
+from audiowhisper_core.models import AIDocument, DocumentRecipe, KnowledgeQuestion, LiveChunk, LiveSession, RecipeRun, TranscriptionJob, TranscriptSegment, WorkspaceItem
 
 
 def recover_pending(queue):
     queued_ids = set(queue.get_job_ids())
     with session_scope() as db:
+        for model, statuses, task, prefix in (
+            (KnowledgeQuestion, ["queued", "generating"], "app.workspace_tasks.run_question", "question"),
+            (RecipeRun, ["queued", "running"], "app.workspace_tasks.run_recipe", "recipe"),
+        ):
+            for item in db.scalars(select(model).where(model.status.in_(statuses))):
+                key = f"{prefix}-{item.id}"
+                if key not in queued_ids:
+                    item.status = "queued"
+                    db.commit()
+                    queue.enqueue(task, item.id, job_id=key, job_timeout=7200)
         live_ids = set(db.scalars(select(LiveSession.job_id)))
         for job in db.scalars(select(TranscriptionJob).where(TranscriptionJob.status.in_(["queued", "preparing", "extracting_audio", "loading_model", "transcribing", "generating_exports"]))):
             if job.id in live_ids or job.id in queued_ids:
@@ -37,3 +47,12 @@ def recover_pending(queue):
             queue.enqueue("app.live_tasks.process_live_chunk", chunk.id, job_id=f"live-{chunk.id}", job_timeout=1800)
         for session in db.scalars(select(LiveSession).where(LiveSession.status == "stopping")):
             queue.enqueue("app.live_tasks.finalize_live_session", session.job_id, job_timeout=1800)
+        # Cover a crash between the completion commit and recipe scheduling.
+        eligible = select(DocumentRecipe.id).where(DocumentRecipe.enabled.is_(True), DocumentRecipe.automatic.is_(True),
+            DocumentRecipe.created_at <= TranscriptionJob.completed_at,
+            or_(DocumentRecipe.project == "", DocumentRecipe.project == WorkspaceItem.project)).exists()
+        completed = list(db.scalars(select(TranscriptionJob.id).outerjoin(WorkspaceItem).where(TranscriptionJob.status == "completed", eligible)))
+        db.commit()
+        from app.workspace_tasks import schedule_recipes
+        for job_id in completed:
+            schedule_recipes(job_id, queue)

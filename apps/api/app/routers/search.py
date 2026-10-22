@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from audiowhisper_core.models import MediaFile, TranscriptSegment, TranscriptionJob, WorkspaceItem
 from app.dependencies import get_db
+from audiowhisper_core.workspace import indexed_matches
 
 router = APIRouter(prefix="/api/search", tags=["search"])
 
@@ -16,7 +17,12 @@ def search(q: str = Query(default="", max_length=200), project: str = Query(defa
            limit: int = Query(default=20, ge=1, le=50), db: Session = Depends(get_db)):
     if not q.strip():
         return {"items": [], "total": 0, "offset": offset, "limit": limit}
-    conditions = [TranscriptSegment.text.icontains(q.strip(), autoescape=True)]
+    matches = indexed_matches(q)
+    if matches is None:
+        return {"items": [], "total": 0, "offset": offset, "limit": limit}
+    conditions = []
+    if any(char in q for char in "%_"):
+        conditions.append(TranscriptSegment.text.icontains(q.strip(), autoescape=True))
     if project:
         conditions.append(WorkspaceItem.project == project)
     if speaker.strip():
@@ -24,7 +30,7 @@ def search(q: str = Query(default="", max_length=200), project: str = Query(defa
         conditions.append(or_(TranscriptSegment.speaker_id.icontains(speaker.strip(), autoescape=True),
                               select(names.c.key).where(names.c.key == TranscriptSegment.speaker_id,
                                                          names.c.value.icontains(speaker.strip(), autoescape=True)).exists()))
-    base = select(TranscriptSegment, MediaFile.original_name, WorkspaceItem).join(
+    base = select(TranscriptSegment, MediaFile.original_name, WorkspaceItem).join(matches, matches.c.segment_id == TranscriptSegment.id).join(
         TranscriptionJob, TranscriptionJob.id == TranscriptSegment.job_id).join(MediaFile).outerjoin(
             WorkspaceItem, WorkspaceItem.job_id == TranscriptionJob.id).where(*conditions)
     total = db.scalar(select(func.count()).select_from(base.subquery()))

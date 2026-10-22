@@ -146,3 +146,5 @@ def finalize_live_session(job_id):
         for fmt in (ExportFormat.TXT, ExportFormat.MARKDOWN, ExportFormat.JSON, ExportFormat.SRT, ExportFormat.VTT):
             generate_export(db, settings, job, media, segments, fmt)
         notify(db, job)
+        from app.workspace_tasks import schedule_recipes
+        schedule_recipes(job_id)
