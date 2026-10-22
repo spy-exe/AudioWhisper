@@ -31,8 +31,12 @@ interface UploadQueueItemProps {
 
 export function UploadQueueItem({ item, appSettings, onRemove }: UploadQueueItemProps) {
   const router = useRouter();
-  const [model, setModel] = useState(appSettings?.default_model ?? "turbo");
-  const [language, setLanguage] = useState(appSettings?.default_language ?? "");
+  // Only explicit choices are state: the defaults follow the settings, which may still be
+  // loading when the file is dropped (a captured "turbo" fallback would silently override them).
+  const [chosenModel, setModel] = useState<string | null>(null);
+  const [chosenLanguage, setLanguage] = useState<string | null>(null);
+  const model = chosenModel ?? appSettings?.default_model ?? "turbo";
+  const language = chosenLanguage ?? appSettings?.default_language ?? "";
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
 

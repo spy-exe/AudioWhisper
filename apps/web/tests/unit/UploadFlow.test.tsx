@@ -6,11 +6,11 @@ import type { MediaFile } from "@/lib/types";
 
 const nav = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => nav }));
-vi.mock("@/contexts/SettingsContext", () => ({
-  useSettings: () => ({ settings: { default_model: "medium", default_language: "pt", transcription_device: "cpu", transcription_compute_type: "int8",
-    default_beam_size: 4, default_vad_enabled: true, default_word_timestamps: true, default_translate_to_english: false, visual_effects_enabled: true,
-    vocabulary: "Opikode", hotwords: "" } }),
-}));
+const saved = { default_model: "medium", default_language: "pt", transcription_device: "cpu", transcription_compute_type: "int8",
+  default_beam_size: 4, default_vad_enabled: true, default_word_timestamps: true, default_translate_to_english: false, visual_effects_enabled: true,
+  vocabulary: "Opikode", hotwords: "" };
+const settingsState = vi.hoisted(() => ({ current: null as unknown }));
+vi.mock("@/contexts/SettingsContext", () => ({ useSettings: () => ({ settings: settingsState.current }) }));
 
 const media = { id: "m1", original_name: "reuniao.wav", size_bytes: 2048, duration_seconds: 65, media_type: "audio", is_duplicate: true } as MediaFile;
 const file = (name: string) => new File(["audio"], name, { type: "audio/wav" });
@@ -18,6 +18,7 @@ const file = (name: string) => new File(["audio"], name, { type: "audio/wav" });
 beforeEach(() => {
   vi.restoreAllMocks();
   nav.push.mockReset();
+  settingsState.current = saved;
 });
 
 function choose(...files: File[]) {
@@ -79,4 +80,21 @@ it("accepts dropped files", async () => {
   fireEvent.dragOver(zone);
   fireEvent.drop(zone, { dataTransfer: { files: [file("arrastado.wav")] } });
   expect(await screen.findByText("arrastado.wav")).toBeInTheDocument();
+});
+
+it("follows the saved defaults even when the file arrives before the settings", async () => {
+  settingsState.current = null;
+  vi.spyOn(api, "uploadMedia").mockResolvedValue({ ...media, is_duplicate: false });
+  const create = vi.spyOn(api, "createJob").mockResolvedValue({ id: "j1" } as never);
+  const view = render(<UploadDropzone />);
+  fireEvent.change(screen.getByLabelText("Selecionar arquivos de áudio ou vídeo"), { target: { files: [file("cedo.wav")] } });
+  await screen.findByRole("button", { name: "Transcrever" });
+  expect(screen.getByRole("combobox", { name: "Modelo" })).toHaveValue("turbo");
+  settingsState.current = saved;
+  view.rerender(<UploadDropzone />);
+  expect(screen.getByRole("combobox", { name: "Modelo" })).toHaveValue("medium");
+  expect(screen.getByRole("combobox", { name: "Idioma" })).toHaveValue("pt");
+  fireEvent.change(screen.getByRole("combobox", { name: "Idioma" }), { target: { value: "en" } });
+  fireEvent.click(screen.getByRole("button", { name: "Transcrever" }));
+  await waitFor(() => expect(create).toHaveBeenCalledWith("m1", expect.objectContaining({ model_name: "medium", language: "en" })));
 });

@@ -1,4 +1,45 @@
-# Validação — 21/10/2026
+# Validação
+
+## Studio 2.1 — 22/10/2026
+
+QA em Linux (CT de desenvolvimento, Debian 13, 4 vCPU, sem GPU), com a stack de produção montada sem Docker: Redis, API (uvicorn), worker (RQ SimpleWorker, CPU, `small`/int8), Next em modo produção e o mesmo Caddyfile do gateway na porta 8080. Transcrição real com faster-whisper; os testes de navegador usam áudio sintético. Python 3.12, como no CI.
+
+| Verificação | Resultado |
+|---|---|
+| API e núcleo compartilhado | 184 testes aprovados (eram 70); cobertura de linhas 97% (era 88,8%) |
+| Worker | 66 testes aprovados (eram 32); cobertura de linhas 96% (era 66,3%) |
+| Frontend | 208 testes aprovados (eram 71); cobertura de linhas 77,6% (era 54%); metas por arquivo novas |
+| TypeScript, ESLint e build de produção | Aprovados |
+| Fluxos completos (Chromium desktop e Pixel 7) | 50 aprovados, 2 dispensados (capturador Windows fora do Windows), 0 falhas, em 11,5 min, com 2 workers; sem o fluxo de IA (sem Ollama) |
+| Acessibilidade automatizada (axe, WCAG A/AA) | Diálogo de atalhos, editor com insights e busca por momentos sem violações |
+
+O fluxo de documentos com Ollama não foi executado neste ambiente, que não tem Ollama nem GPU. A mudança nele nesta versão (excluir documento e nome do arquivo baixado) está coberta por testes de API e de componente. O cenário do capturador Windows se dispensa sozinho fora do Windows.
+
+### Regressões e defeitos encontrados nesta rodada
+
+- `Range: bytes=-N` servia os primeiros N bytes em vez dos últimos. O teste foi validado por mutação: com o código antigo, ele falha.
+- VTT sem escape de `<`, `>` e `&`; legendas com trechos vazios encerravam o bloco antes da hora.
+- "Tentar novamente" após falha não voltava a acompanhar o job: a página mantinha o estado de erro.
+- Atalhos de letra paravam depois de clicar em qualquer botão (o foco no botão contava como digitação).
+- Um arquivo escolhido antes de as configurações carregarem ficava preso ao modelo `turbo`, ignorando o padrão salvo. Achado no E2E, quando o worker com limite de memória foi encerrado ao carregar um modelo maior. O teste foi validado por mutação.
+- O indicador de fila estourava o cabeçalho em 320px.
+- A fila indisponível deixava o job em "Na fila" para sempre; agora ele vai para falha com nova tentativa.
+- Uma gravação podia ser excluída com diarização ou documento ainda em andamento no worker.
+- A fila listava os 20 jobs mais antigos e escondia o que estava transcrevendo; agora mostra primeiro os que estão rodando e informa o total.
+- PDF e DOCX mostravam `**` e linhas de tabela Markdown cruas.
+
+### Reproduzir
+
+```bash
+python -m pytest apps/api/tests -c apps/api/pytest.ini --cov=apps/api/app --cov=packages/core/src/audiowhisper_core --cov-fail-under=95
+python -m pytest apps/worker/tests -c apps/worker/pytest.ini --cov=apps/worker/app --cov-fail-under=90
+cd apps/web && npm run lint && npm run typecheck && npm run test:coverage && npm run build
+E2E_BASE_URL=http://localhost:8080 npx playwright test --grep-invert "local AI document"   # sem Ollama
+```
+
+Os testes E2E que mudam configurações globais restauram o estado ao terminar, mesmo quando falham. Rode o E2E com o worker usando o mesmo modelo padrão configurado na interface.
+
+## Validação anterior — 21/10/2026 (Studio 2.0)
 
 QA local em Windows, Chromium desktop e emulação Pixel 7, com a aplicação de produção em Docker Compose. Transcrição real com faster-whisper `turbo`, CUDA/float16 e RTX 5060; documentos com Ollama `qwen3:4b`. Os testes de navegador usam áudio sintético. Capturas da biblioteca são filtradas pelo SHA-256 da reunião de teste; o modo Windows usa uma entrada sintética e oculta o histórico pessoal.
 

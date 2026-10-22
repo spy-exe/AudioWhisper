@@ -33,7 +33,7 @@
 - Erros inesperados da API retornam JSON com `request_id`, sem detalhes internos.
 - Fila indisponível: o job é marcado como falho com opção de tentar novamente, em vez de ficar parado em "Na fila"; encerrar ou recuperar uma captura informa a falha sem perder o áudio.
 - Erros de rede aparecem em português no lugar de "Failed to fetch".
-- Correções: `Range: bytes=-N` agora serve o fim do arquivo; VTT escapa `<`, `>` e `&`; legendas ignoram trechos vazios; "Tentar novamente" após falha volta a acompanhar o processamento; o download deixa de ser `transcript.markdown`.
+- Correções: `Range: bytes=-N` agora serve o fim do arquivo; VTT escapa `<`, `>` e `&`; legendas ignoram trechos vazios; "Tentar novamente" após falha volta a acompanhar o processamento; o download deixa de ser `transcript.markdown`; um arquivo escolhido antes de as configurações carregarem deixa de ficar preso ao modelo `turbo`; atalhos de letra funcionam com o foco em botões.
 
 ### Qualidade
-- API e núcleo: 70 → 183 testes, cobertura 89% → 97%. Worker: 32 → 66 testes, 66% → 96%. Frontend: 71 → 207 testes, 54% → 77%. Metas de CI elevadas para 95% (API), 90% (worker) e metas por arquivo no Vitest.
+- API e núcleo: 70 → 184 testes, cobertura 89% → 97%. Worker: 32 → 66 testes, 66% → 96%. Frontend: 71 → 208 testes, 54% → 77%. Metas de CI elevadas para 95% (API), 90% (worker) e metas por arquivo no Vitest.
