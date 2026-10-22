@@ -67,7 +67,11 @@ def test_live_chunk_validation_and_state(client, fixture_path, monkeypatch):
     audio = fixture_path("speech.wav").read_bytes()
     base = f"/api/live/{job['id']}/chunks"
     assert client.post(f"{base}/20001?start=0", files={"file": ("c.wav", audio, "audio/wav")}).status_code == 422
-    assert client.post(f"{base}/0?start=0", files={"file": ("c.wav", b"0" * 2_000_001, "audio/wav")}).status_code == 413
+    # A reduced limit keeps the oversized case cheap: 2 MB through the multipart parser is ~2 min under coverage.
+    monkeypatch.setattr("app.routers.live.MAX_CHUNK_BYTES", 1_000)
+    assert client.post(f"{base}/0?start=0", files={"file": ("c.wav", b"0" * 1_001, "audio/wav")}).status_code == 413
+    monkeypatch.undo()
+    monkeypatch.setattr("app.routers.live.get_queue", lambda: queue)
     import io
     import wave
     buffer = io.BytesIO()

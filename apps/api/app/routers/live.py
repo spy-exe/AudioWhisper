@@ -20,6 +20,8 @@ from app.queue import get_queue
 
 router = APIRouter(prefix="/api/live", tags=["live"])
 
+MAX_CHUNK_BYTES = 2_000_000
+
 
 class LiveIn(BaseModel):
     title: str = Field(default="Nova captura", min_length=1, max_length=500)
@@ -67,9 +69,9 @@ async def ingest_chunk(job_id: str, sequence: int, file: UploadFile = File(...),
         raise HTTPException(422, "Sequência inválida")
     session = get_live(db, job_id)
     chunk_id = f"{job_id}-{sequence}-{revision}"
-    data = await file.read(2_000_001)
-    if len(data) > 2_000_000:
-        raise HTTPException(413, "Trecho excede o limite de 2 MB")
+    data = await file.read(MAX_CHUNK_BYTES + 1)
+    if len(data) > MAX_CHUNK_BYTES:
+        raise HTTPException(413, f"Trecho excede o limite de {MAX_CHUNK_BYTES // 1_000_000} MB")
     try:
         with wave.open(io.BytesIO(data)) as audio:
             if (audio.getnchannels(), audio.getsampwidth(), audio.getframerate()) != (1, 2, 16000):
