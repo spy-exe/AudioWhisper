@@ -7,6 +7,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from audiowhisper_core.config import get_settings
+from audiowhisper_core.text import fold_text
 
 
 def _sqlite_pragma_on_connect(dbapi_connection: sqlite3.Connection, _) -> None:
@@ -16,6 +17,8 @@ def _sqlite_pragma_on_connect(dbapi_connection: sqlite3.Connection, _) -> None:
     cursor.execute("PRAGMA busy_timeout=5000")
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
+    # SQLite has no unaccent(); searches compare aw_fold(column) with a folded term.
+    dbapi_connection.create_function("aw_fold", 1, fold_text, deterministic=True)
 
 
 _engine: Engine | None = None

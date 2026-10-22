@@ -6,14 +6,20 @@ from audiowhisper_core.config import get_settings
 from app.dependencies import require_access_token
 from app.error_handlers import register_error_handlers
 from app.request_context import RequestContextMiddleware
-from app.routers import documents, exports, health, jobs, library, live, media, session, settings, sharing, speakers, ws
+from app.routers import (bookmarks, documents, exports, health, jobs, library, live, media, search, session, settings,
+                         sharing, speakers, system, ws)
 
 settings_obj = get_settings()
 
 app = FastAPI(
     title="AudioWhisper API",
-    version="0.1.0",
+    version="2.1.0",
     debug=False,
+    # No Swagger/ReDoc pages: they load assets from public CDNs. The schema is served below as a
+    # regular route, so it sits behind the same access token as the rest of the API.
+    docs_url=None,
+    openapi_url=None,
+    redoc_url=None,
     dependencies=[Depends(require_access_token)],
 )
 
@@ -41,4 +47,12 @@ app.include_router(sharing.router)
 app.include_router(speakers.router)
 app.include_router(live.router)
 app.include_router(exports.router)
+app.include_router(bookmarks.router)
+app.include_router(search.router)
+app.include_router(system.router)
 app.include_router(ws.router)
+
+
+@app.get("/api/openapi.json", include_in_schema=False)
+def openapi_schema() -> dict:
+    return app.openapi()

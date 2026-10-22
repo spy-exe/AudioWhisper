@@ -105,3 +105,12 @@ def review_document(document_id: str, payload: ReviewIn, db: Session = Depends(g
     document.status = "reviewed" if payload.reviewed else "generated"
     db.commit()
     return document_out(document, current_hash)
+
+
+@router.delete("/api/documents/{document_id}", status_code=204)
+def delete_document(document_id: str, db: Session = Depends(get_db)):
+    document = get_document(db, document_id)
+    if document.status in ("queued", "generating"):
+        raise HTTPException(409, "Aguarde a geração terminar antes de excluir o documento.")
+    db.delete(document)  # shares and deliveries cascade: revoked links stop resolving immediately
+    db.commit()

@@ -146,15 +146,18 @@ class OllamaProvider:
         return validate_evidence(EvidenceOutput(items=items), segments)
 
 
+DOCUMENT_TITLES = {"minutes": "Ata da reunião", "briefing": "Briefing executivo", "summary": "Resumo", "decisions": "Decisões",
+                   "actions": "Plano de ação", "risks": "Riscos", "questions": "Perguntas em aberto",
+                   "email": "E-mail de acompanhamento", "custom": "Análise"}
+
+
 def document_markdown(kind, items, segments):
     timestamps = {}
     for segment in segments:
         minutes, seconds = divmod(int(segment.start), 60)
         hours, minutes = divmod(minutes, 60)
         timestamps[segment.id] = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-    titles = {"minutes": "Ata da reunião", "briefing": "Briefing executivo", "summary": "Resumo", "decisions": "Decisões",
-              "actions": "Plano de ação", "risks": "Riscos", "questions": "Perguntas em aberto", "email": "E-mail de acompanhamento", "custom": "Análise"}
-    lines = [f"# {titles[kind]}", "", "Rascunho gerado por IA local. Revise antes de compartilhar.", ""]
+    lines = [f"# {DOCUMENT_TITLES[kind]}", "", "Rascunho gerado por IA local. Revise antes de compartilhar.", ""]
     for item in items:
         lines.extend([f"- {item['text']}", f"  Fontes: {', '.join(timestamps[source] for source in item['source_segment_ids'])}"])
         if item["kind"] == "action":

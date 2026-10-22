@@ -8,6 +8,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
+from redis.exceptions import RedisError
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -130,9 +131,15 @@ def stop_live(job_id: str, payload: StopIn, db: Session = Depends(get_db)):
         return {"status": "completed"}
     if session.expected_chunks is not None and session.expected_chunks != payload.expected_chunks:
         raise HTTPException(409, "O encerramento já foi solicitado com outro número de trechos.")
+    if session.status == "cancelled":
+        raise HTTPException(409, "Esta captura foi cancelada. O áudio recebido continua preservado.")
     session.status, session.expected_chunks, session.duration = "stopping", payload.expected_chunks, payload.duration
     db.commit()
-    get_queue().enqueue("app.live_tasks.finalize_live_session", job_id, job_id=f"finalize-{job_id}", job_timeout=1800)
+    try:
+        get_queue().enqueue("app.live_tasks.finalize_live_session", job_id, job_id=f"finalize-{job_id}", job_timeout=1800)
+    except Exception:
+        # The stop is recorded; the worker's recovery also finalizes "stopping" sessions on restart.
+        raise HTTPException(503, "Encerramento registrado, mas a fila está indisponível. Use Recuperar captura em instantes.")
     return {"status": "stopping"}
 
 
@@ -140,14 +147,17 @@ def stop_live(job_id: str, payload: StopIn, db: Session = Depends(get_db)):
 def retry_live(job_id: str, db: Session = Depends(get_db)):
     get_live(db, job_id)
     chunks = list(db.scalars(select(LiveChunk).where(LiveChunk.job_id == job_id, LiveChunk.status.in_(["failed", "processing"])) ))
-    for chunk in chunks:
-        # A currently running RQ job is allowed to finish; don't create concurrent copies.
-        rq_id = f"live-{chunk.id}"
-        queued = get_queue().fetch_job(rq_id)
-        if queued and queued.get_status() in ("started", "queued"):
-            continue
-        chunk.status, chunk.error = "queued", None
-        db.commit()
-        get_queue().enqueue("app.live_tasks.process_live_chunk", chunk.id, job_id=rq_id, job_timeout=1800)
-    get_queue().enqueue("app.live_tasks.finalize_live_session", job_id, job_timeout=1800)
+    try:
+        for chunk in chunks:
+            # A currently running RQ job is allowed to finish; don't create concurrent copies.
+            rq_id = f"live-{chunk.id}"
+            queued = get_queue().fetch_job(rq_id)
+            if queued and queued.get_status() in ("started", "queued"):
+                continue
+            chunk.status, chunk.error = "queued", None
+            db.commit()
+            get_queue().enqueue("app.live_tasks.process_live_chunk", chunk.id, job_id=rq_id, job_timeout=1800)
+        get_queue().enqueue("app.live_tasks.finalize_live_session", job_id, job_timeout=1800)
+    except RedisError:
+        raise HTTPException(503, "A fila está indisponível. Os trechos continuam salvos; tente recuperar novamente.")
     return {"status": "recovering", "chunks": len(chunks)}

@@ -21,3 +21,12 @@ def extract_extension(display_name: str) -> str:
     if "." not in display_name:
         return ""
     return display_name.rsplit(".", 1)[-1].lower()
+
+
+def content_disposition(filename: str) -> str:
+    """attachment header with an ASCII fallback plus the RFC 6266/5987 UTF-8 name."""
+    from urllib.parse import quote
+
+    fallback = unicodedata.normalize("NFKD", filename).encode("ascii", "ignore").decode()
+    fallback = re.sub(r'[^A-Za-z0-9._ -]+', "_", fallback).strip() or "download"
+    return f'attachment; filename="{fallback}"; filename*=UTF-8\'\'{quote(filename, safe="")}'
