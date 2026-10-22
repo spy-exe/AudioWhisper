@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export interface ShortcutHandlers {
   togglePlay?: () => void;
@@ -11,6 +11,11 @@ export interface ShortcutHandlers {
   search?: () => void;
   save?: () => void;
   playSelected?: () => void;
+  undo?: () => void;
+  bookmark?: () => void;
+  nextUncertain?: () => void;
+  previousUncertain?: () => void;
+  help?: () => void;
 }
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -24,52 +29,92 @@ function isTypingTarget(target: EventTarget | null): boolean {
   );
 }
 
+function insideDialog(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && !!target.closest("[aria-modal='true']");
+}
+
 /** Global playback/editing shortcuts. Only Ctrl+F (search) and Ctrl+S (save) fire while the
- * user is typing in a field — everything else is suppressed there, per spec section 10.4. */
+ * user is typing in a field — everything else is suppressed there, per spec section 10.4.
+ * Ctrl+Z outside fields undoes editor changes; inside a field the browser's own undo applies. */
 export function useKeyboardShortcuts(
   handlers: ShortcutHandlers,
   enabled = true,
 ) {
+  // Latest handlers without re-subscribing the listener on every render.
+  const current = useRef(handlers);
+  current.current = handlers;
+
   useEffect(() => {
     if (!enabled) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.isComposing) return;
+      if (e.isComposing || insideDialog(e.target)) return;
+      const h = current.current;
       const typing = isTypingTarget(e.target);
       const ctrlOrCmd = e.ctrlKey || e.metaKey;
 
       if (ctrlOrCmd && e.key.toLowerCase() === "f") {
         e.preventDefault();
-        handlers.search?.();
+        h.search?.();
         return;
       }
       if (ctrlOrCmd && e.key.toLowerCase() === "s") {
         e.preventDefault();
-        handlers.save?.();
+        h.save?.();
         return;
       }
 
       if (typing) return;
 
+      if (ctrlOrCmd && !e.shiftKey && e.key.toLowerCase() === "z") {
+        if (h.undo) {
+          e.preventDefault();
+          h.undo();
+        }
+        return;
+      }
+      if (ctrlOrCmd || e.altKey) return;
+
       switch (e.key) {
         case " ":
           e.preventDefault();
-          handlers.togglePlay?.();
+          h.togglePlay?.();
           break;
         case "j":
         case "J":
           e.preventDefault();
-          if (e.shiftKey) handlers.seekBackBig?.();
-          else handlers.seekBack?.();
+          if (e.shiftKey) h.seekBackBig?.();
+          else h.seekBack?.();
           break;
         case "l":
         case "L":
           e.preventDefault();
-          if (e.shiftKey) handlers.seekForwardBig?.();
-          else handlers.seekForward?.();
+          if (e.shiftKey) h.seekForwardBig?.();
+          else h.seekForward?.();
+          break;
+        case "m":
+        case "M":
+          if (h.bookmark) {
+            e.preventDefault();
+            h.bookmark();
+          }
+          break;
+        case "n":
+        case "N":
+          if (e.shiftKey ? h.previousUncertain : h.nextUncertain) {
+            e.preventDefault();
+            if (e.shiftKey) h.previousUncertain?.();
+            else h.nextUncertain?.();
+          }
+          break;
+        case "?":
+          if (h.help) {
+            e.preventDefault();
+            h.help();
+          }
           break;
         case "Enter":
-          handlers.playSelected?.();
+          h.playSelected?.();
           break;
         default:
           break;
@@ -78,5 +123,5 @@ export function useKeyboardShortcuts(
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [handlers, enabled]);
+  }, [enabled]);
 }

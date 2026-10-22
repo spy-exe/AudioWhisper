@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { formatDuration, statusLabel } from "@/lib/format";
+import { formatDuration, formatEta, statusLabel } from "@/lib/format";
 import type {
   MediaFile,
   TranscriptionJob,
@@ -26,11 +26,13 @@ export function ProcessingView({
   newSegments,
   provisionalSegments = [],
   connectionError,
+  eta = null,
 }: {
   job: TranscriptionJob;
   newSegments: TranscriptSegment[];
   provisionalSegments?: TranscriptSegment[];
   connectionError: string | null;
+  eta?: number | null;
 }) {
   const [media, setMedia] = useState<MediaFile | null>(null);
   const [busy, setBusy] = useState(false);
@@ -85,6 +87,9 @@ export function ProcessingView({
             {live ? "Estado da captura" : "Acompanhar processamento"}
           </h2>
           {!live && <ProgressBar value={job.progress} />}
+          {!live && formatEta(eta) && !cancellationRequested && (
+            <p className="font-mono text-xs text-text-muted">{formatEta(eta)}</p>
+          )}
           <p role="status" className="text-sm text-text-secondary">
             {cancellationRequested
               ? "Cancelamento solicitado. Aguardando o motor liberar a etapa atual."

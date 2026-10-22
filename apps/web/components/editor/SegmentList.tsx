@@ -19,6 +19,12 @@ interface SegmentListProps {
   matchSegmentIds: Set<string>;
   currentMatchSegmentId: string | null;
   selectedSegmentIds: Set<string>;
+  uncertainSegmentIds?: Set<string>;
+  bookmarkedSegmentIds?: Set<string>;
+  onBookmark?: (segment: TranscriptSegment) => void;
+  onSplit?: (segment: TranscriptSegment, offset: number) => void;
+  onCopyLink?: (segment: TranscriptSegment) => void;
+  emptyMessage?: string;
 }
 
 export function SegmentList({
@@ -31,6 +37,12 @@ export function SegmentList({
   matchSegmentIds,
   currentMatchSegmentId,
   selectedSegmentIds,
+  uncertainSegmentIds,
+  bookmarkedSegmentIds,
+  onBookmark,
+  onSplit,
+  onCopyLink,
+  emptyMessage = "Nenhum segmento disponível ainda.",
 }: SegmentListProps) {
   const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
@@ -40,11 +52,7 @@ export function SegmentList({
   };
 
   if (segments.length === 0) {
-    return (
-      <p className="p-6 text-sm text-text-muted">
-        Nenhum segmento disponível ainda.
-      </p>
-    );
+    return <p className="p-6 text-sm text-text-muted">{emptyMessage}</p>;
   }
 
   return (
@@ -62,8 +70,13 @@ export function SegmentList({
             selected={selectedSegmentIds.has(segment.id)}
             isSearchMatch={matchSegmentIds.has(segment.id)}
             isCurrentMatch={currentMatchSegmentId === segment.id}
+            uncertain={uncertainSegmentIds?.has(segment.id)}
+            bookmarked={bookmarkedSegmentIds?.has(segment.id)}
             onSelect={onSelect}
             onTextChange={onTextChange}
+            onBookmark={onBookmark}
+            onSplit={onSplit}
+            onCopyLink={onCopyLink}
             registerRef={registerRef}
           />
         );

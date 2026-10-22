@@ -3,9 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { api, ApiError } from "@/lib/api";
+import { api, describeError } from "@/lib/api";
 import { LANGUAGE_OPTIONS, MODEL_OPTIONS } from "@/lib/constants";
 import { formatBytes, formatDuration } from "@/lib/format";
+import { transcriptionSettingsFrom } from "@/lib/transcription-settings";
 import type { AppSettings, MediaFile } from "@/lib/types";
 
 import { Badge } from "@/components/ui/Badge";
@@ -30,7 +31,7 @@ interface UploadQueueItemProps {
 export function UploadQueueItem({ item, appSettings, onRemove }: UploadQueueItemProps) {
   const router = useRouter();
   const [model, setModel] = useState(appSettings?.default_model ?? "turbo");
-  const [language, setLanguage] = useState("");
+  const [language, setLanguage] = useState(appSettings?.default_language ?? "");
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
 
@@ -39,20 +40,13 @@ export function UploadQueueItem({ item, appSettings, onRemove }: UploadQueueItem
     setStarting(true);
     setStartError(null);
     try {
-      const job = await api.createJob(item.media.id, {
-        model_name: model,
-        language: language || null,
-        device: appSettings?.transcription_device ?? "cuda",
-        compute_type: appSettings?.transcription_compute_type ?? "float16",
-        beam_size: appSettings?.default_beam_size ?? 5,
-        vad_enabled: appSettings?.default_vad_enabled ?? true,
-        word_timestamps: appSettings?.default_word_timestamps ?? true,
-        translate_to_english: appSettings?.default_translate_to_english ?? false,
-        temperature: 0,
-      });
+      const job = await api.createJob(
+        item.media.id,
+        transcriptionSettingsFrom(appSettings, { model_name: model, language: language || null }),
+      );
       router.push(`/jobs/${job.id}`);
     } catch (err) {
-      setStartError(err instanceof ApiError ? err.message : "Falha ao iniciar transcrição");
+      setStartError(describeError(err, "Falha ao iniciar transcrição. Tente novamente."));
       setStarting(false);
     }
   };

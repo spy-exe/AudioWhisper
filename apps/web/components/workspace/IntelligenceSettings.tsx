@@ -25,12 +25,14 @@ export function IntelligenceSettings() {
       .catch(() => {
         if (active) setError("Não foi possível verificar o serviço local.");
       });
-    fetch("/api/integrations")
-      .then((r) => r.json())
+    api
+      .integrations()
       .then((r) => {
         if (active) setIntegrations(r);
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (active) setError("Não foi possível verificar as integrações do servidor.");
+      });
     return () => {
       active = false;
     };
@@ -126,8 +128,12 @@ export function IntelligenceSettings() {
         <Button
           size="sm"
           onClick={async () => {
-            await fetch("/api/session", { method: "DELETE" });
-            window.location.reload();
+            try {
+              await fetch("/api/session", { method: "DELETE" });
+              window.location.reload();
+            } catch {
+              setError("Não foi possível encerrar a sessão. Verifique a conexão.");
+            }
           }}
         >
           Sair da sessão local

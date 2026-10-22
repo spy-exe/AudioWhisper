@@ -1,6 +1,9 @@
 import type {
   ApiErrorBody,
   AppSettings,
+  Bookmark,
+  BookmarkColor,
+  BulkResult,
   ExportFile,
   ExportFormat,
   GpuDiagnostics,
@@ -10,11 +13,20 @@ import type {
   Organization,
   AIDocument,
   IntelligenceStatus,
+  LibraryFacets,
+  LibraryStats,
+  QueueStatus,
+  SearchPage,
   ShareLink,
+  StorageInfo,
   TranscriptionJob,
   TranscriptionSettings,
   TranscriptSegment,
+  TranscriptStats,
 } from "./types";
+
+export const NETWORK_ERROR_MESSAGE =
+  "Sem conexão com o AudioWhisper. Verifique a rede e tente novamente.";
 
 export class ApiError extends Error {
   code: string;
@@ -30,16 +42,45 @@ export class ApiError extends Error {
   }
 }
 
+/** A readable message for any failure: API errors keep their own text, aborts stay silent. */
+export function describeError(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) {
+    const fields = error.details?.fields as Record<string, string> | undefined;
+    if (fields && Object.keys(fields).length)
+      return `${error.message} ${Object.values(fields).join(" ")}`;
+    return error.message || fallback;
+  }
+  return fallback;
+}
+
+export function isAbort(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
-    ...init,
-    headers: {
-      ...(init?.body && !(init.body instanceof FormData)
-        ? { "Content-Type": "application/json" }
-        : {}),
-      ...init?.headers,
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(path, {
+      ...init,
+      headers: {
+        ...(init?.body && !(init.body instanceof FormData)
+          ? { "Content-Type": "application/json" }
+          : {}),
+        ...init?.headers,
+      },
+    });
+  } catch (error) {
+    // fetch only rejects for network failures and aborts; aborts must stay recognizable.
+    if (isAbort(error)) throw error;
+    throw new ApiError(0, {
+      error: {
+        code: "NETWORK_ERROR",
+        message: NETWORK_ERROR_MESSAGE,
+        details: {},
+        request_id: null,
+      },
+    });
+  }
 
   if (!res.ok) {
     if (res.status === 401 && typeof window !== "undefined")
@@ -68,6 +109,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   intelligence: () => request<IntelligenceStatus>("/api/intelligence"),
+  integrations: () =>
+    request<{ smtp_available: boolean; diarization_configured: boolean }>(
+      "/api/integrations",
+    ),
   documents: (jobId: string) =>
     request<AIDocument[]>(`/api/jobs/${jobId}/documents`),
   generateDocument: (
@@ -184,16 +229,131 @@ export const api = {
     jobId: string,
     formats: ExportFormat[],
     includeTimestamps = true,
+    includeSpeakers = true,
   ) =>
     request<ExportFile[]>(`/api/jobs/${jobId}/exports`, {
       method: "POST",
-      body: JSON.stringify({ formats, include_timestamps: includeTimestamps }),
+      body: JSON.stringify({
+        formats,
+        include_timestamps: includeTimestamps,
+        include_speakers: includeSpeakers,
+      }),
     }),
   listExports: (jobId: string) =>
     request<ExportFile[]>(`/api/jobs/${jobId}/exports`),
   downloadExportUrl: (exportId: string) => `/api/exports/${exportId}/download`,
 
   mediaFileUrl: (mediaId: string) => `/api/media/${mediaId}/stream`,
+
+  deleteJob: (jobId: string) =>
+    request<void>(`/api/jobs/${jobId}`, { method: "DELETE" }),
+  retranscribe: (jobId: string, settings: TranscriptionSettings) =>
+    request<TranscriptionJob>(`/api/jobs/${jobId}/retranscribe`, {
+      method: "POST",
+      body: JSON.stringify(settings),
+    }),
+  stats: (jobId: string, threshold?: number) =>
+    request<TranscriptStats>(
+      `/api/jobs/${jobId}/stats${threshold ? `?threshold=${threshold}` : ""}`,
+    ),
+  splitSegment: (jobId: string, segmentId: string, offset: number) =>
+    request<TranscriptSegment[]>(
+      `/api/jobs/${jobId}/segments/${segmentId}/split`,
+      { method: "POST", body: JSON.stringify({ offset }) },
+    ),
+  mergeSegments: (jobId: string, segmentIds: string[]) =>
+    request<TranscriptSegment[]>(`/api/jobs/${jobId}/segments/merge`, {
+      method: "POST",
+      body: JSON.stringify({ segment_ids: segmentIds }),
+    }),
+
+  bookmarks: (jobId: string) =>
+    request<Bookmark[]>(`/api/jobs/${jobId}/bookmarks`),
+  createBookmark: (
+    jobId: string,
+    values: {
+      start: number;
+      label: string;
+      note?: string;
+      color?: BookmarkColor;
+      segment_id?: string | null;
+    },
+  ) =>
+    request<Bookmark>(`/api/jobs/${jobId}/bookmarks`, {
+      method: "POST",
+      body: JSON.stringify(values),
+    }),
+  updateBookmark: (
+    id: string,
+    values: Partial<Pick<Bookmark, "start" | "label" | "note" | "color">>,
+  ) =>
+    request<Bookmark>(`/api/bookmarks/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(values),
+    }),
+  deleteBookmark: (id: string) =>
+    request<void>(`/api/bookmarks/${id}`, { method: "DELETE" }),
+
+  addSpeaker: (jobId: string, name: string) =>
+    request<Organization & { speaker_id: string }>(
+      `/api/jobs/${jobId}/speakers`,
+      { method: "POST", body: JSON.stringify({ name }) },
+    ),
+  mergeSpeakers: (jobId: string, source: string, target: string) =>
+    request<Organization & { moved_segments: number }>(
+      `/api/jobs/${jobId}/speakers/merge`,
+      { method: "POST", body: JSON.stringify({ source, target }) },
+    ),
+  removeSpeaker: (jobId: string, speakerId: string) =>
+    request<Organization & { cleared_segments: number }>(
+      `/api/jobs/${jobId}/speakers/${encodeURIComponent(speakerId)}`,
+      { method: "DELETE" },
+    ),
+  assignSpeakers: (
+    jobId: string,
+    segmentIds: string[],
+    speakerId: string | null,
+  ) =>
+    request<TranscriptSegment[]>(`/api/jobs/${jobId}/segments/speaker`, {
+      method: "PUT",
+      body: JSON.stringify({ segment_ids: segmentIds, speaker_id: speakerId }),
+    }),
+
+  search: (params: URLSearchParams, signal?: AbortSignal) =>
+    request<SearchPage>(`/api/search?${params}`, { signal }),
+  libraryFacets: () => request<LibraryFacets>("/api/library/facets"),
+  libraryStats: () => request<LibraryStats>("/api/library/stats"),
+  bulk: (
+    payload:
+      | { action: "delete"; job_ids: string[] }
+      | {
+          action: "organize";
+          job_ids: string[];
+          folder?: string;
+          project?: string;
+          add_tags?: string[];
+        },
+  ) =>
+    request<BulkResult>("/api/library/bulk", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  exportBundleUrl: (
+    jobId: string,
+    options: { includeTimestamps?: boolean; includeSpeakers?: boolean } = {},
+  ) =>
+    `/api/jobs/${jobId}/exports/bundle?include_timestamps=${options.includeTimestamps ?? true}&include_speakers=${options.includeSpeakers ?? true}`,
+  deleteDocument: (id: string) =>
+    request<void>(`/api/documents/${id}`, { method: "DELETE" }),
+
+  storage: () => request<StorageInfo>("/api/system/storage"),
+  cleanup: (target: "tmp" | "exports") =>
+    request<{ target: string; freed_bytes: number; removed: number }>(
+      "/api/system/cleanup",
+      { method: "POST", body: JSON.stringify({ target }) },
+    ),
+  queue: () => request<QueueStatus>("/api/system/queue"),
 };
 
 function uploadWithProgress(
@@ -219,13 +379,35 @@ function uploadWithProgress(
           const body = JSON.parse(xhr.responseText) as ApiErrorBody;
           reject(new ApiError(xhr.status, body));
         } catch {
-          reject(new Error(`Upload falhou (${xhr.status})`));
+          // A proxy error page (HTML) instead of the API's JSON body.
+          reject(
+            new ApiError(xhr.status, {
+              error: {
+                code: `HTTP_${xhr.status}`,
+                message:
+                  xhr.status === 413
+                    ? "O arquivo excede o limite de envio configurado no servidor."
+                    : `O servidor não aceitou o envio (${xhr.status}). Tente novamente.`,
+                details: {},
+                request_id: null,
+              },
+            }),
+          );
         }
       }
     });
 
     xhr.addEventListener("error", () =>
-      reject(new Error("Falha de rede durante o upload")),
+      reject(
+        new ApiError(0, {
+          error: {
+            code: "NETWORK_ERROR",
+            message: "Falha de rede durante o upload. Tente enviar novamente.",
+            details: {},
+            request_id: null,
+          },
+        }),
+      ),
     );
     xhr.addEventListener("abort", () =>
       reject(new DOMException("Upload cancelado", "AbortError")),

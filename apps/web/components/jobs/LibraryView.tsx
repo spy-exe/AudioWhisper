@@ -3,13 +3,32 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { api } from "@/lib/api";
-import type { LibraryPage } from "@/lib/types";
-import { formatDuration, formatRelativeTime, statusLabel } from "@/lib/format";
+import { api, describeError } from "@/lib/api";
+import type { LibraryFacets, LibraryPage } from "@/lib/types";
+import {
+  formatDuration,
+  formatRelativeTime,
+  formatTimestamp,
+  statusLabel,
+} from "@/lib/format";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Icon } from "@/components/ui/Icon";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+
+const FILTERS = [
+  ["folder", "Pasta", "folders"],
+  ["project", "Projeto", "projects"],
+  ["tag", "Tag", "tags"],
+] as const;
+
+const SORTS = [
+  ["recent", "Mais recentes"],
+  ["oldest", "Mais antigas"],
+  ["name", "Nome (A–Z)"],
+  ["duration", "Mais longas"],
+] as const;
 
 export function LibraryView({ recent = false }: { recent?: boolean }) {
   const search = useSearchParams();
@@ -18,10 +37,20 @@ export function LibraryView({ recent = false }: { recent?: boolean }) {
   const [query, setQuery] = useState(search.get("q") ?? "");
   const [composing, setComposing] = useState(false);
   const [page, setPage] = useState<LibraryPage | null>(null);
+  const [facets, setFacets] = useState<LibraryFacets | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refresh, setRefresh] = useState(0);
+  const [selecting, setSelecting] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkFolder, setBulkFolder] = useState("");
+  const [bulkTag, setBulkTag] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkNotice, setBulkNotice] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  // A refresh after a bulk action keeps the current rows on screen instead of a skeleton.
+  const quietRefresh = useRef(false);
   const paramsString = recent ? "limit=5" : search.toString();
   const currentQuery = search.get("q") ?? "";
 
@@ -51,6 +80,21 @@ export function LibraryView({ recent = false }: { recent?: boolean }) {
   }, [query, currentQuery, composing, pathname, router, search, recent]);
 
   useEffect(() => {
+    if (recent) return;
+    let active = true;
+    // Suggestions only: the filters keep working as free text if this request fails.
+    Promise.resolve()
+      .then(() => api.libraryFacets())
+      .then((result) => {
+        if (active) setFacets(result);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [recent, refresh]);
+
+  useEffect(() => {
     const controller = new AbortController();
     let busy = false;
     const load = async () => {
@@ -75,7 +119,8 @@ export function LibraryView({ recent = false }: { recent?: boolean }) {
         if (!controller.signal.aborted) setLoading(false);
       }
     };
-    setLoading(true);
+    if (!quietRefresh.current) setLoading(true);
+    quietRefresh.current = false;
     void load();
     const timer = setInterval(load, 5000);
     return () => {
@@ -84,10 +129,43 @@ export function LibraryView({ recent = false }: { recent?: boolean }) {
     };
   }, [paramsString, refresh]);
 
+  const toggle = (jobId: string) =>
+    setSelected((previous) => {
+      const next = new Set(previous);
+      if (next.has(jobId)) next.delete(jobId);
+      else next.add(jobId);
+      return next;
+    });
+  const finishBulk = (message: string) => {
+    setSelected(new Set());
+    setBulkNotice(message);
+    quietRefresh.current = true;
+    setRefresh((n) => n + 1);
+  };
+  const organizeSelection = async (values: { folder?: string; add_tags?: string[] }) => {
+    setBulkBusy(true);
+    try {
+      const result = await api.bulk({ action: "organize", job_ids: [...selected], ...values });
+      finishBulk(
+        `${result.done.length} ${result.done.length === 1 ? "gravação atualizada" : "gravações atualizadas"}.`,
+      );
+      setBulkFolder("");
+      setBulkTag("");
+    } catch (failure) {
+      setBulkNotice(describeError(failure, "Não foi possível atualizar as gravações."));
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const hasFilters =
+    !!currentQuery || FILTERS.some(([key]) => search.get(key)) || !!search.get("status");
+  const visibleIds = page?.items.map((item) => item.job.id) ?? [];
+
   return (
     <div className="flex min-w-0 flex-col gap-4">
       {!recent && (
-        <div className="library-filters grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="library-filters grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
           <div className="relative min-w-0 flex-1 basis-64">
             <Icon
               name="search"
@@ -130,33 +208,131 @@ export function LibraryView({ recent = false }: { recent?: boolean }) {
             <option value="failed">Com falha</option>
             <option value="cancelled">Cancelados</option>
           </select>
-          <div className="grid min-w-0 grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-3">
-          {(
-            [
-              ["folder", "Pasta"],
-              ["project", "Projeto"],
-              ["tag", "Tag"],
-            ] as const
-          ).map(([key, label]) => (
-            <label
-              key={key}
-              className="flex min-w-0 items-center gap-2 text-xs text-text-muted"
+          <select
+            aria-label="Ordenar biblioteca"
+            className="field w-auto"
+            value={search.get("sort") ?? "recent"}
+            onChange={(e) => change("sort", e.target.value === "recent" ? "" : e.target.value)}
+          >
+            {SORTS.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <div className="grid min-w-0 grid-cols-1 gap-4 sm:col-span-3 sm:grid-cols-3">
+            {FILTERS.map(([key, label, facet]) => (
+              <label
+                key={key}
+                className="flex min-w-0 items-center gap-2 text-xs text-text-muted"
+              >
+                {label}
+                <input
+                  aria-label={`Filtrar por ${label.toLowerCase()}`}
+                  className="field min-w-0 flex-1"
+                  list={`library-${key}-options`}
+                  defaultValue={search.get(key) ?? ""}
+                  onBlur={(e) => change(key, e.target.value.trim())}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter")
+                      change(key, e.currentTarget.value.trim());
+                  }}
+                />
+                <datalist id={`library-${key}-options`}>
+                  {facets?.[facet].map((entry) => (
+                    <option key={entry.value} value={entry.value}>
+                      {`${entry.count} ${entry.count === 1 ? "gravação" : "gravações"}`}
+                    </option>
+                  ))}
+                </datalist>
+              </label>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 sm:col-span-3">
+            <Link href={`/search${currentQuery ? `?q=${encodeURIComponent(currentQuery)}` : ""}`} className="text-sm text-accent hover:underline">
+              Buscar cada momento em que algo foi dito →
+            </Link>
+            <Button
+              size="sm"
+              variant={selecting ? "secondary" : "ghost"}
+              aria-pressed={selecting}
+              onClick={() => {
+                setSelecting(!selecting);
+                setSelected(new Set());
+                setBulkNotice("");
+              }}
             >
-              {label}
-              <input
-                aria-label={`Filtrar por ${label.toLowerCase()}`}
-                className="field min-w-0 flex-1"
-                defaultValue={search.get(key) ?? ""}
-                onBlur={(e) => change(key, e.target.value.trim())}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter")
-                    change(key, e.currentTarget.value.trim());
-                }}
-              />
-            </label>
-          ))}
+              {selecting ? "Concluir seleção" : "Selecionar gravações"}
+            </Button>
           </div>
         </div>
+      )}
+      {selecting && (
+        <div className="bulk-bar" role="toolbar" aria-label="Ações em lote">
+          <span className="text-sm text-text-secondary">
+            {selected.size} {selected.size === 1 ? "selecionada" : "selecionadas"}
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() =>
+              setSelected(selected.size === visibleIds.length ? new Set() : new Set(visibleIds))
+            }
+          >
+            {selected.size === visibleIds.length && visibleIds.length ? "Desmarcar página" : "Selecionar página"}
+          </Button>
+          <form
+            className="flex flex-wrap items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (bulkFolder.trim()) void organizeSelection({ folder: bulkFolder.trim() });
+            }}
+          >
+            <input
+              className="field w-44"
+              aria-label="Mover seleção para a pasta"
+              placeholder="Pasta"
+              list="library-folder-options"
+              value={bulkFolder}
+              onChange={(e) => setBulkFolder(e.target.value)}
+            />
+            <Button size="sm" type="submit" disabled={bulkBusy || !selected.size || !bulkFolder.trim()}>
+              Mover
+            </Button>
+          </form>
+          <form
+            className="flex flex-wrap items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (bulkTag.trim()) void organizeSelection({ add_tags: [bulkTag.trim()] });
+            }}
+          >
+            <input
+              className="field w-36"
+              aria-label="Adicionar tag à seleção"
+              placeholder="Tag"
+              list="library-tag-options"
+              value={bulkTag}
+              onChange={(e) => setBulkTag(e.target.value)}
+            />
+            <Button size="sm" type="submit" disabled={bulkBusy || !selected.size || !bulkTag.trim()}>
+              Adicionar tag
+            </Button>
+          </form>
+          <Button
+            size="sm"
+            variant="danger"
+            disabled={bulkBusy || !selected.size}
+            onClick={() => setConfirmDelete(true)}
+          >
+            Excluir
+          </Button>
+        </div>
+      )}
+      {bulkNotice && (
+        <p role="status" className="text-sm text-text-secondary">
+          {bulkNotice}
+        </p>
       )}
       {error && (
         <div
@@ -191,74 +367,118 @@ export function LibraryView({ recent = false }: { recent?: boolean }) {
           </div>
         ) : page?.items.length ? (
           <ul className="divide-y divide-border">
-            {page.items.map((item) => (
-              <li key={item.job.id}>
-                <Link
-                  href={`/jobs/${item.job.id}`}
-                  className="library-row flex min-w-0 flex-wrap items-center gap-4 p-5 sm:px-6"
-                >
-                  <span className="library-symbol flex shrink-0 items-center justify-center text-accent">
-                    <Icon name="file" />
-                  </span>
-                  <div className="min-w-0 flex-1 basis-40">
-                    <p
-                      className="library-title truncate"
-                      title={item.title || item.name}
-                    >
-                      {item.title || item.name}
-                    </p>
-                    <p className="mt-1 truncate text-xs text-text-muted">
-                      {item.project ||
-                        item.folder ||
-                        (item.media_type === "audio" ? "Áudio" : "Vídeo")}{" "}
-                      ·{" "}
-                      {formatRelativeTime(item.job.updated_at)}
-                    </p>
-                    {!["completed", "failed", "cancelled"].includes(
-                      item.job.status,
-                    ) && (
-                      <ProgressBar
-                        value={item.job.progress}
-                        label={`Progresso de ${item.title || item.name}`}
-                        className="mt-2 max-w-xs"
-                      />
+            {page.items.map((item) => {
+              const title = item.title || item.name;
+              return (
+                <li key={item.job.id} className="library-item">
+                  <div className="flex min-w-0 items-stretch">
+                    {selecting && (
+                      <label className="library-check">
+                        <input
+                          type="checkbox"
+                          checked={selected.has(item.job.id)}
+                          onChange={() => toggle(item.job.id)}
+                          aria-label={`Selecionar ${title}`}
+                        />
+                      </label>
                     )}
+                    <Link
+                      href={`/jobs/${item.job.id}`}
+                      className="library-row flex min-w-0 flex-1 flex-wrap items-center gap-4 p-5 sm:px-6"
+                    >
+                      <span className="library-symbol flex shrink-0 items-center justify-center text-accent">
+                        <Icon name="file" />
+                      </span>
+                      <div className="min-w-0 flex-1 basis-40">
+                        <p className="library-title truncate" title={title}>
+                          {title}
+                        </p>
+                        <p className="mt-1 truncate text-xs text-text-muted">
+                          {item.project ||
+                            item.folder ||
+                            (item.media_type === "audio" ? "Áudio" : "Vídeo")}{" "}
+                          · {formatRelativeTime(item.job.updated_at)}
+                          {item.job.model_name && ` · ${item.job.model_name}`}
+                        </p>
+                        {item.tags.length > 0 && (
+                          <p className="mt-2 flex flex-wrap gap-1.5">
+                            {item.tags.slice(0, 5).map((tag) => (
+                              <span key={tag} className="tag-chip">
+                                {tag}
+                              </span>
+                            ))}
+                          </p>
+                        )}
+                        {!["completed", "failed", "cancelled"].includes(
+                          item.job.status,
+                        ) && (
+                          <ProgressBar
+                            value={item.job.progress}
+                            label={`Progresso de ${title}`}
+                            className="mt-2 max-w-xs"
+                          />
+                        )}
+                      </div>
+                      <span className="font-mono text-xs text-text-muted">
+                        {item.duration_seconds != null
+                          ? formatDuration(item.duration_seconds)
+                          : "—"}
+                      </span>
+                      <Badge
+                        tone={
+                          item.job.status === "completed"
+                            ? "success"
+                            : item.job.status === "failed"
+                              ? "danger"
+                              : "neutral"
+                        }
+                      >
+                        {statusLabel(item.job.status)}
+                      </Badge>
+                      <Icon
+                        name="arrow"
+                        className="hidden size-4 text-text-muted sm:block"
+                      />
+                    </Link>
                   </div>
-                  <span className="font-mono text-xs text-text-muted">
-                    {item.duration_seconds != null
-                      ? formatDuration(item.duration_seconds)
-                      : "—"}
-                  </span>
-                  <Badge
-                    tone={
-                      item.job.status === "completed"
-                        ? "success"
-                        : item.job.status === "failed"
-                          ? "danger"
-                          : "neutral"
-                    }
-                  >
-                    {statusLabel(item.job.status)}
-                  </Badge>
-                  <Icon
-                    name="arrow"
-                    className="hidden size-4 text-text-muted sm:block"
-                  />
-                </Link>
-              </li>
-            ))}
+                  {item.matches && item.matches.length > 0 && (
+                    <ul className="library-matches" aria-label={`Trechos encontrados em ${title}`}>
+                      {item.matches.map((match) => (
+                        <li key={match.segment_id}>
+                          <Link href={`/jobs/${item.job.id}?t=${Math.floor(match.start)}`}>
+                            <span className="font-mono text-xs text-accent">
+                              {formatTimestamp(match.start)}
+                            </span>
+                            <span className="snippet">
+                              {match.before}
+                              <mark>{match.match}</mark>
+                              {match.after}
+                            </span>
+                          </Link>
+                        </li>
+                      ))}
+                      {(item.match_count ?? 0) > item.matches.length && (
+                        <li className="text-xs text-text-muted">
+                          +{(item.match_count ?? 0) - item.matches.length} trechos nesta gravação
+                        </li>
+                      )}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         ) : (
           !error && (
             <div className="flex min-h-48 flex-col items-center justify-center gap-2 p-6 text-center">
               <Icon name="library" className="mb-2 size-7 text-text-muted" />
               <p className="text-sm">
-                {currentQuery || search.get("status")
+                {hasFilters
                   ? "Nenhuma gravação encontrada"
                   : "Sua biblioteca começa com uma conversa"}
               </p>
               <p className="text-xs text-text-muted">
-                {currentQuery
+                {hasFilters
                   ? "Tente outro termo ou limpe os filtros."
                   : "Importe um áudio ou comece uma captura no Studio."}
               </p>
@@ -316,6 +536,25 @@ export function LibraryView({ recent = false }: { recent?: boolean }) {
           </div>
         )
       )}
+      <ConfirmDialog
+        open={confirmDelete}
+        title={`Excluir ${selected.size} ${selected.size === 1 ? "gravação" : "gravações"}?`}
+        description="Transcrições, marcadores, documentos e links compartilhados serão removidos. Gravações ainda em processamento são mantidas. Não é possível desfazer."
+        confirmLabel="Excluir selecionadas"
+        danger
+        onConfirm={async () => {
+          try {
+            const result = await api.bulk({ action: "delete", job_ids: [...selected] });
+            finishBulk(
+              `${result.done.length} excluída(s)` +
+                (result.skipped.length ? `; ${result.skipped.length} mantida(s): ${result.skipped[0]!.reason}` : "."),
+            );
+          } catch (failure) {
+            throw new Error(describeError(failure, "Não foi possível excluir as gravações."));
+          }
+        }}
+        onClose={() => setConfirmDelete(false)}
+      />
     </div>
   );
 }

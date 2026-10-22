@@ -9,9 +9,9 @@ def test_bookmark_crud_and_ordering(client, make_completed_job):
     assert earlier["color"] == "amber" and earlier["note"] == ""
     assert [b["label"] for b in client.get(url).json()] == ["Abertura", "Decisão"]
 
-    patched = client.patch(f"/api/bookmarks/{earlier['id']}", json={"label": "Boas-vindas", "start": 2, "color": "green"})
+    patched = client.patch(f"/api/bookmarks/{earlier['id']}", json={"label": "Boas-vindas", "start": 2, "color": "blue"})
     assert patched.status_code == 200
-    assert (patched.json()["label"], patched.json()["start"], patched.json()["color"]) == ("Boas-vindas", 2, "green")
+    assert (patched.json()["label"], patched.json()["start"], patched.json()["color"]) == ("Boas-vindas", 2, "blue")
     assert client.delete(f"/api/bookmarks/{earlier['id']}").status_code == 204
     assert [b["id"] for b in client.get(url).json()] == [later.json()["id"]]
     assert client.delete(f"/api/bookmarks/{earlier['id']}").status_code == 404

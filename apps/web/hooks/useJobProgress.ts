@@ -31,8 +31,10 @@ export function isTerminal(status: string): boolean {
   return (TERMINAL_STATUSES as readonly string[]).includes(status);
 }
 
-export function useJobProgress(jobId: string | null) {
+/** `attempt` restarts the subscription, e.g. after a terminal job is retried in place. */
+export function useJobProgress(jobId: string | null, attempt = 0) {
   const [job, setJob] = useState<TranscriptionJob | null>(null);
+  const [eta, setEta] = useState<number | null>(null);
   const [newSegments, setSegments] = useState<TranscriptSegment[]>([]);
   const [provisionalSegments, setProvisional] = useState<TranscriptSegment[]>(
     [],
@@ -44,6 +46,7 @@ export function useJobProgress(jobId: string | null) {
     setSegments([]);
     setProvisional([]);
     setConnectionError(null);
+    setEta(null);
     if (!jobId) return;
     let disposed = false;
     let terminal = false;
@@ -101,6 +104,7 @@ export function useJobProgress(jobId: string | null) {
             setSegments(data.segments ?? []);
           } else if (data.type === "progress") {
             terminal = data.status ? isTerminal(data.status) : terminal;
+            setEta(terminal ? null : (data.eta_seconds ?? null));
             setJob((previous) =>
               previous
                 ? {
@@ -157,7 +161,7 @@ export function useJobProgress(jobId: string | null) {
       clearTimeout(retry);
       socket?.close();
     };
-  }, [jobId]);
+  }, [jobId, attempt]);
 
-  return { job, newSegments, provisionalSegments, connectionError };
+  return { job, newSegments, provisionalSegments, connectionError, eta };
 }

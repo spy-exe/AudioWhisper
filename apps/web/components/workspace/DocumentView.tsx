@@ -1,10 +1,11 @@
 "use client";
 import { useState } from "react";
-import { api } from "@/lib/api";
+import { api, describeError } from "@/lib/api";
 import { formatTimestamp } from "@/lib/format";
 import type { AIDocument, TranscriptSegment } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SharePanel } from "./SharePanel";
 import { DocumentContent } from "./DocumentContent";
 
@@ -24,6 +25,7 @@ export function DocumentView({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const changed = draft !== document.markdown;
   const save = async (reviewed: boolean) => {
     setBusy(true);
@@ -84,6 +86,9 @@ export function DocumentView({
           }}
         >
           Copiar
+        </Button>
+        <Button size="sm" variant="danger" onClick={() => setConfirmDelete(true)}>
+          Excluir
         </Button>
         <details className="relative">
           <summary className="rounded-md border border-border px-3 py-1 text-xs text-text-secondary hover:bg-surface-interactive">
@@ -204,6 +209,22 @@ export function DocumentView({
       {document.status === "reviewed" && !document.stale && !changed && (
         <SharePanel document={document} />
       )}
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Excluir este documento?"
+        description="O rascunho, a revisão e todos os links privados deste documento deixam de existir. A transcrição não é alterada."
+        confirmLabel="Excluir documento"
+        danger
+        onConfirm={async () => {
+          try {
+            await api.deleteDocument(document.id);
+          } catch (failure) {
+            throw new Error(describeError(failure, "Não foi possível excluir o documento."));
+          }
+          onChange();
+        }}
+        onClose={() => setConfirmDelete(false)}
+      />
     </div>
   );
 }

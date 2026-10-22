@@ -33,3 +33,13 @@ export const LANGUAGE_OPTIONS = [
   { value: "ja", label: "Japonês" },
   { value: "zh", label: "Chinês" },
 ] as const;
+
+export const BOOKMARK_COLORS = [
+  { value: "amber", label: "Âmbar", swatch: "var(--color-amber)" },
+  { value: "blue", label: "Azul", swatch: "var(--color-accent)" },
+  { value: "violet", label: "Violeta", swatch: "var(--color-accent-violet)" },
+  { value: "spectral", label: "Verde-água", swatch: "var(--color-accent-spectral)" },
+  { value: "rose", label: "Rosa", swatch: "var(--color-danger)" },
+] as const;
+
+export const DEFAULT_LOW_CONFIDENCE = 0.6;

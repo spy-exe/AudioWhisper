@@ -1,12 +1,14 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Icon } from "./Icon";
 
 import { GpuStatusBadge } from "@/components/jobs/GpuStatusBadge";
+import { QueueIndicator } from "@/components/jobs/QueueIndicator";
 
 export function TopBar() {
   const pathname = usePathname();
+  const router = useRouter();
   if (pathname.startsWith("/shared/"))
     return (
       <header className="border-b border-border px-6 py-5 text-sm font-semibold text-text-secondary">
@@ -42,7 +44,24 @@ export function TopBar() {
             </span>
           </Link>
           <div className="header-status">
-            <span className="hidden items-center gap-2 text-xs text-text-muted md:flex">
+            {!pathname.startsWith("/search") && (
+              <form
+                role="search"
+                className="header-search"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const field = event.currentTarget.elements.namedItem("q") as HTMLInputElement;
+                  const term = field.value.trim();
+                  router.push(term ? `/search?q=${encodeURIComponent(term)}` : "/search");
+                  field.value = "";
+                }}
+              >
+                <Icon name="search" className="size-4 text-text-muted" />
+                <input name="q" type="search" aria-label="Buscar em todas as transcrições" placeholder="Buscar no que foi dito" />
+              </form>
+            )}
+            <QueueIndicator />
+            <span className="hidden items-center gap-2 text-xs text-text-muted xl:flex">
               <Icon name="shield" className="size-4 text-success" />{" "}
               Processamento local
             </span>

@@ -161,7 +161,7 @@ class SegmentMergeIn(BaseModel):
     segment_ids: list[str] = Field(min_length=2, max_length=50)
 
 
-BookmarkColor = Literal["amber", "violet", "spectral", "rose", "green"]
+BookmarkColor = Literal["amber", "violet", "spectral", "rose", "blue"]
 
 
 class BookmarkIn(BaseModel):
