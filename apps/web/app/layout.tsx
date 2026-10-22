@@ -9,6 +9,7 @@ import { SettingsProvider } from "@/contexts/SettingsContext";
 import { MotionPreferences } from "@/components/ui/MotionPreferences";
 
 import "./globals.css";
+import "./workspace.css";
 
 const heading = localFont({ src: "../node_modules/@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2", variable: "--font-heading", display: "swap" });
 const body = localFont({ src: "../node_modules/@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2", variable: "--font-body", display: "swap" });

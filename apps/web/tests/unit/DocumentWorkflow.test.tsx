@@ -3,11 +3,13 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { DocumentView } from "@/components/workspace/DocumentView";
 import { SharePanel } from "@/components/workspace/SharePanel";
 import { api } from "@/lib/api";
+import { workspaceApi } from "@/lib/workspace-api";
 import type { AIDocument, TranscriptSegment } from "@/lib/types";
 
 vi.mock("@/lib/api", () => ({ api: {
   shares: vi.fn(), createShare: vi.fn(), revokeShare: vi.fn(), emailDocument: vi.fn(), reviewDocument: vi.fn(), documentDownloadUrl: vi.fn(() => "/download"),
 } }));
+vi.mock("@/lib/workspace-api", () => ({ workspaceApi: { importActions: vi.fn() } }));
 const document: AIDocument = {
   id: "document-1", job_id: "job-1", kind: "minutes", model: "local", status: "generated", stale: false,
   reviewed_at: null, error: null, created_at: "2026-10-21T12:00:00Z", markdown: "# Ata\n\n- Revisar backups",
@@ -60,6 +62,20 @@ it("hides sharing as soon as a reviewed document has unsaved edits", async () =>
   expect(screen.queryByRole("button", { name: "Criar link privado" })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }));
   await waitFor(() => expect(api.reviewDocument).toHaveBeenCalledWith("document-1", "Atualização", false));
+});
+
+it("imports reviewed actions once, reports existing actions and preserves a retry after failure", async () => {
+  vi.mocked(workspaceApi.importActions).mockResolvedValueOnce({ imported: 1, items: [] }).mockResolvedValueOnce({ imported: 0, items: [] }).mockRejectedValueOnce(new Error("Fila indisponível"));
+  renderDocument({ status: "reviewed", reviewed_at: "2026-10-21T12:05:00Z" });
+  const button = screen.getByRole("button", { name: "Adicionar ações ao plano" });
+  fireEvent.click(button);
+  expect(await screen.findByRole("status")).toHaveTextContent("1 tarefa(s)");
+  expect(workspaceApi.importActions).toHaveBeenCalledWith("document-1");
+  fireEvent.click(button);
+  expect(await screen.findByRole("status")).toHaveTextContent("já estão no seu plano");
+  fireEvent.click(button);
+  expect(await screen.findByRole("alert")).toHaveTextContent("Fila indisponível");
+  expect(button).toBeEnabled();
 });
 
 it("creates an expiring read-only link and can revoke it", async () => {

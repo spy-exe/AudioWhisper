@@ -8,6 +8,7 @@ import { replaceTranscriptText } from "@/lib/transcript-text";
 import type { MediaFile, Organization, TranscriptSegment } from "@/lib/types";
 import { AIWorkspace } from "@/components/workspace/AIWorkspace";
 import { OrganizationPanel } from "@/components/workspace/OrganizationPanel";
+import { MeetingNotebook } from "@/components/hub/NotebookView";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 import { Badge } from "@/components/ui/Badge";
@@ -126,6 +127,17 @@ export function TranscriptEditor({ jobId, media }: TranscriptEditorProps) {
     if (mediaElement.paused) mediaElement.play();
     else mediaElement.pause();
   }, [mediaElement]);
+
+  const initialJump = useRef(false);
+  useEffect(() => {
+    if (!segments || !mediaElement || initialJump.current) return;
+    const source = segments.find(segment => segment.id === new URLSearchParams(window.location.search).get("segment"));
+    if (!source) return;
+    const jump = () => { initialJump.current = true; seekTo(source.start); setSelectedSegmentIds(new Set([source.id])); };
+    if (mediaElement.readyState >= 1) jump();
+    else mediaElement.addEventListener("loadedmetadata", jump, { once: true });
+    return () => mediaElement.removeEventListener("loadedmetadata", jump);
+  }, [segments, mediaElement, seekTo]);
 
   const changeRate = useCallback(
     (rate: number) => {
@@ -548,6 +560,7 @@ export function TranscriptEditor({ jobId, media }: TranscriptEditorProps) {
           />
         )}
       </div>
+      <MeetingNotebook jobId={jobId} segments={segments} currentTime={currentTime} onSource={id => { setSpeakerFilter(""); handleSelect(id, false); mediaElement?.play().catch(() => undefined); }} />
     </motion.div>
   );
 }

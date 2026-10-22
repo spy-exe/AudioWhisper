@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { workspaceApi } from "@/lib/workspace-api";
+import Link from "next/link";
 import { formatTimestamp } from "@/lib/format";
 import type { AIDocument, TranscriptSegment } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
@@ -202,7 +204,51 @@ export function DocumentView({
         </p>
       )}
       {document.status === "reviewed" && !document.stale && !changed && (
-        <SharePanel document={document} />
+        <>
+          {document.items.some((item) => item.kind === "action") && (
+            <div className="rounded-xl border border-border bg-surface-raised p-4">
+              <p className="mb-3 text-sm">
+                Importe as ações listadas em “Verificar fontes”. Ajustes no
+                texto do documento não alteram esses campos; revise responsáveis
+                e prazos no plano.
+              </p>
+              <div className="hub-inline-actions">
+                <Button
+                  size="sm"
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    setError("");
+                    try {
+                      const result = await workspaceApi.importActions(
+                        document.id,
+                      );
+                      setStatus(
+                        result.imported
+                          ? `${result.imported} tarefa(s) adicionada(s) ao plano.`
+                          : "As ações deste documento já estão no seu plano.",
+                      );
+                    } catch (failure) {
+                      setError(
+                        failure instanceof Error
+                          ? failure.message
+                          : "Falha ao importar ações.",
+                      );
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  Adicionar ações ao plano
+                </Button>
+                <Link href="/tasks" className="hub-text-link">
+                  Abrir tarefas →
+                </Link>
+              </div>
+            </div>
+          )}
+          <SharePanel document={document} />
+        </>
       )}
     </div>
   );

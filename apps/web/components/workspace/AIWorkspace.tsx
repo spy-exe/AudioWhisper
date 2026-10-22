@@ -44,6 +44,7 @@ export function AIWorkspace({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [refresh, setRefresh] = useState(0);
+  useEffect(() => { setSelected(new URLSearchParams(window.location.search).get("document") ?? ""); }, [jobId]);
   useEffect(() => {
     let active = true;
     api

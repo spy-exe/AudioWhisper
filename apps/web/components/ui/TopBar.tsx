@@ -1,12 +1,20 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { workspaceNavigation } from "@/lib/workspace-navigation";
 import { Icon } from "./Icon";
+import { CommandPalette } from "./CommandPalette";
+import { WorkspaceDialog } from "./WorkspaceDialog";
 
 import { GpuStatusBadge } from "@/components/jobs/GpuStatusBadge";
 
 export function TopBar() {
   const pathname = usePathname();
+  const [more, setMore] = useState(false);
+  useEffect(() => {
+    setMore(false);
+  }, [pathname]);
   if (pathname.startsWith("/shared/"))
     return (
       <header className="border-b border-border px-6 py-5 text-sm font-semibold text-text-secondary">
@@ -35,18 +43,18 @@ export function TopBar() {
               <Icon name="studio" />
             </span>
             <span className="brand-title">
-              AudioWhisper{" "}
-              <span className="brand-version">
-                STUDIO 2.0
-              </span>
+              AudioWhisper <span className="brand-version">STUDIO 2.0</span>
             </span>
           </Link>
           <div className="header-status">
+            <CommandPalette />
             <span className="hidden items-center gap-2 text-xs text-text-muted md:flex">
               <Icon name="shield" className="size-4 text-success" />{" "}
               Processamento local
             </span>
-            <div className="header-gpu"><GpuStatusBadge /></div>
+            <div className="header-gpu">
+              <GpuStatusBadge />
+            </div>
           </div>
         </div>
       </header>
@@ -54,38 +62,80 @@ export function TopBar() {
         <p className="mb-3 hidden px-3 text-xs font-semibold uppercase tracking-[.18em] text-text-muted lg:block">
           SEU WORKSPACE
         </p>
-        <Link href="/#live-capture-slot" className="nav-create"><Icon name="mic" /> Nova gravação <span aria-hidden="true">+</span></Link>
-        {(
-          [
-            { href: "/", label: "Studio", icon: "studio" },
-            { href: "/library", label: "Biblioteca", icon: "library" },
-            { href: "/settings", label: "Configurações", icon: "settings" },
-          ] as const
-        ).map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
+        <Link href="/#live-capture-slot" className="nav-create">
+          <Icon name="mic" /> Nova gravação <span aria-hidden="true">+</span>
+        </Link>
+        <div className="desktop-destinations">
+          {workspaceNavigation.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="app-nav-link"
+              aria-current={
+                (
+                  item.href === "/"
+                    ? pathname === "/" || pathname.startsWith("/jobs/")
+                    : pathname.startsWith(item.href)
+                )
+                  ? "page"
+                  : undefined
+              }
+            >
+              <Icon name={item.icon} />
+              <span>{item.label}</span>
+            </Link>
+          ))}
+        </div>
+        <div className="mobile-destinations">
+          {workspaceNavigation.slice(0, 3).map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="app-nav-link"
+              aria-current={pathname === item.href ? "page" : undefined}
+            >
+              <Icon name={item.icon} />
+              <span>{item.label}</span>
+            </Link>
+          ))}
+          <button
             className="app-nav-link"
-            aria-current={
-              (
-                item.href === "/"
-                  ? pathname === "/" || pathname.startsWith("/jobs/")
-                  : pathname.startsWith(item.href)
-              )
-                ? "page"
-                : undefined
-            }
+            aria-expanded={more}
+            onClick={() => setMore(true)}
           >
-            <Icon name={item.icon} />
-            <span>{item.label}</span>
-          </Link>
-        ))}
+            <Icon name="command" />
+            <span>Mais</span>
+          </button>
+        </div>
         <div className="sidebar-note">
           <Icon name="shield" className="mb-3 size-6 text-success" />
           <p>Seu áudio fica com você.</p>
           <span>Inteligência local, do primeiro segundo ao próximo passo.</span>
         </div>
       </nav>
+      <WorkspaceDialog
+        open={more}
+        onClose={() => setMore(false)}
+        title="Seu workspace"
+      >
+        <nav className="command-options" aria-label="Todas as ferramentas">
+          {workspaceNavigation.map((item) => (
+            <Link
+              href={item.href}
+              key={item.href}
+              onClick={() => setMore(false)}
+              aria-current={pathname === item.href ? "page" : undefined}
+            >
+              <Icon name={item.icon} />
+              <span>
+                <strong>{item.label}</strong>
+                <small>{item.description}</small>
+              </span>
+              <Icon name="arrow" />
+            </Link>
+          ))}
+        </nav>
+      </WorkspaceDialog>
     </>
   );
 }

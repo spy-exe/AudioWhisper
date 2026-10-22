@@ -35,6 +35,7 @@ export function useKeyboardShortcuts(
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.isComposing) return;
+      if (e.target instanceof Element && e.target.closest("dialog[open]")) return;
       const typing = isTypingTarget(e.target);
       const ctrlOrCmd = e.ctrlKey || e.metaKey;
 

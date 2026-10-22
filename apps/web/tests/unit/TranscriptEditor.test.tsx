@@ -7,6 +7,7 @@ vi.mock("@/components/editor/Waveform", () => ({ Waveform: () => null }));
 vi.mock("@/components/editor/MediaPlayer", () => ({ MediaPlayer: () => null }));
 vi.mock("@/components/workspace/AIWorkspace", () => ({ AIWorkspace: () => null }));
 vi.mock("@/components/workspace/OrganizationPanel", () => ({ OrganizationPanel: () => null }));
+vi.mock("@/components/hub/NotebookView", () => ({ MeetingNotebook: () => null }));
 afterEach(() => vi.restoreAllMocks());
 it("serializes autosaves so an older request cannot overwrite a newer edit", async () => {
   HTMLElement.prototype.scrollIntoView = vi.fn();
