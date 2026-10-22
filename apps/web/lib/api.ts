@@ -30,7 +30,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     ...init,
     headers: {
@@ -67,7 +67,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  intelligence: () => request<IntelligenceStatus>("/api/intelligence"),
+  intelligence: (signal?: AbortSignal) => request<IntelligenceStatus>("/api/intelligence", { signal }),
   documents: (jobId: string) =>
     request<AIDocument[]>(`/api/jobs/${jobId}/documents`),
   generateDocument: (
