@@ -21,7 +21,7 @@ export const workspaceNavigation = [
     href: "/projects",
     label: "Projetos",
     icon: "projects",
-    description: "Conversas e pessoas com contexto",
+    description: "Gravações organizadas por projeto",
   },
   {
     href: "/search",
@@ -43,15 +43,15 @@ export const workspaceNavigation = [
   },
   {
     href: "/knowledge",
-    label: "Assistente",
-    icon: "sparkle",
+    label: "Consultas",
+    icon: "search",
     description: "Perguntas sobre várias reuniões",
   },
   {
     href: "/recipes",
-    label: "Receitas",
+    label: "Modelos",
     icon: "workflow",
-    description: "Preparar documentos do seu jeito",
+    description: "Modelos e geração de documentos",
   },
   {
     href: "/settings",

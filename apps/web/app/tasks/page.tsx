@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { TasksView } from "@/components/hub/TasksView";
-export const metadata = { title: "Próximos passos — AudioWhisper" };
+export const metadata = { title: "Tarefas · AudioWhisper" };
 export default function Page() {
   return (
     <Suspense

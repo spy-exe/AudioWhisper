@@ -11,7 +11,9 @@ import type { TranscriptSegment } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import {
   HubPage,
+  FilterDisclosure,
   HubPanel,
+  HubDisclosure,
   MutationFeedback,
   Pagination,
   ProjectField,
@@ -158,54 +160,63 @@ export function NotebookView() {
   );
   return (
     <HubPage
-      eyebrow="IDEIAS QUE MERECEM FICAR"
-      title="Caderno de escuta"
-      description="Guarde um ponto importante, dê nome a um capítulo e conecte suas anotações ao momento exato da conversa."
+      title="Caderno"
+      description="Notas, marcadores e capítulos das suas gravações."
     >
       <QuerySearch
         current={filters.params.get("q") ?? ""}
         commit={(value) => filters.change("q", value)}
         label="Buscar no caderno"
-        placeholder="Encontre uma ideia ou anotação"
+        placeholder="Buscar anotações"
       />
-      <div className="hub-filter-row">
-        <ProjectField
-          value={filters.params.get("project") ?? ""}
-          onChange={(value) => filters.change("project", value)}
-        />
-        <label className="hub-label">
-          Tipo
-          <select
-            className="field"
-            value={filters.params.get("kind") ?? "all"}
-            onChange={(e) => filters.change("kind", e.target.value)}
-          >
-            <option value="all">Todos os registros</option>
-            {Object.entries(kinds).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="hub-check">
-          <input
-            type="checkbox"
-            checked={archived}
-            onChange={(e) =>
-              filters.change("archived", String(e.target.checked))
-            }
+      <FilterDisclosure
+        count={
+          [
+            filters.params.get("project"),
+            (filters.params.get("kind") ?? "all") !== "all",
+            archived,
+          ].filter(Boolean).length
+        }
+      >
+        <div className="hub-filter-row">
+          <ProjectField
+            value={filters.params.get("project") ?? ""}
+            onChange={(value) => filters.change("project", value)}
           />
-          Arquivadas
-        </label>
-      </div>
+          <label className="hub-label">
+            Tipo
+            <select
+              className="field"
+              value={filters.params.get("kind") ?? "all"}
+              onChange={(e) => filters.change("kind", e.target.value)}
+            >
+              <option value="all">Todos os registros</option>
+              {Object.entries(kinds).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="hub-check">
+            <input
+              type="checkbox"
+              checked={archived}
+              onChange={(e) =>
+                filters.change("archived", String(e.target.checked))
+              }
+            />
+            Arquivadas
+          </label>
+        </div>
+      </FilterDisclosure>
       <ResourceState
         {...resource}
         retry={resource.refresh}
         empty={
           resource.data?.items.length === 0
             ? {
-                title: "Uma ideia pode começar em qualquer segundo",
+                title: "Nenhuma anotação encontrada",
                 text: "Abra uma gravação, encontre um trecho e use o Caderno da reunião para criar uma nota, um marcador ou um capítulo.",
               }
             : undefined
@@ -250,106 +261,109 @@ export function MeetingNotebook({
       setSegmentId(segments[0]?.id ?? "");
   }, [segments, segmentId]);
   return (
-    <HubPanel title="Caderno da reunião" label="MARQUE O QUE IMPORTA">
-      <form
-        noValidate
-        className="hub-form"
-        onSubmit={async (e) => {
-          e.preventDefault();
-          if (
-            await mutation.execute(
-              () =>
-                workspaceApi.createNote(jobId, {
-                  segment_id: segmentId,
-                  title: title.trim(),
-                  body,
-                  kind,
-                }),
-              "Registro salvo no caderno.",
-            )
-          ) {
-            setTitle("");
-            setBody("");
-            resource.refresh();
-          }
-        }}
-      >
-        <DraftGuard dirty={!!(title || body)} />
-        <div className="hub-form-grid">
-          <label className="hub-label">
-            Trecho de origem
-            <select
-              className="field"
-              value={segmentId}
-              onChange={(e) => setSegmentId(e.target.value)}
-            >
-              {segments.map((segment) => (
-                <option key={segment.id} value={segment.id}>
-                  {formatTimestamp(segment.start)} · {segment.text.slice(0, 90)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="hub-label">
-            Tipo de registro
-            <select
-              className="field"
-              value={kind}
-              onChange={(e) => setKind(e.target.value as Note["kind"])}
-            >
-              {Object.entries(kinds).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          disabled={!segments.length}
-          onClick={() => {
-            const segment =
-              segments.find(
-                (s) => s.start <= currentTime && s.end >= currentTime,
-              ) ??
-              [...segments].reverse().find((s) => s.start <= currentTime) ??
-              segments[0];
-            if (segment) setSegmentId(segment.id);
+    <HubPanel title="Caderno da reunião">
+      <HubDisclosure title="Adicionar registro">
+        <form
+          noValidate
+          className="hub-form"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (
+              await mutation.execute(
+                () =>
+                  workspaceApi.createNote(jobId, {
+                    segment_id: segmentId,
+                    title: title.trim(),
+                    body,
+                    kind,
+                  }),
+                "Registro salvo no caderno.",
+              )
+            ) {
+              setTitle("");
+              setBody("");
+              resource.refresh();
+            }
           }}
         >
-          Usar trecho em reprodução
-        </Button>
-        <label className="hub-label">
-          Título do registro
-          <input
-            className="field"
-            value={title}
-            maxLength={512}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="O que merece voltar à conversa?"
-          />
-        </label>
-        <label className="hub-label">
-          Sua anotação
-          <textarea
-            className="field min-h-24 resize-none"
-            value={body}
-            maxLength={12000}
-            onChange={(e) => setBody(e.target.value)}
-          />
-        </label>
-        <Button
-          variant="primary"
-          type="submit"
-          disabled={mutation.busy || !segmentId || !title.trim()}
-        >
-          Salvar no caderno
-        </Button>
-        <MutationFeedback {...mutation} />
-      </form>
+          <DraftGuard dirty={!!(title || body)} />
+          <div className="hub-form-grid">
+            <label className="hub-label">
+              Trecho de origem
+              <select
+                className="field"
+                value={segmentId}
+                onChange={(e) => setSegmentId(e.target.value)}
+              >
+                {segments.map((segment) => (
+                  <option key={segment.id} value={segment.id}>
+                    {formatTimestamp(segment.start)} ·{" "}
+                    {segment.text.slice(0, 90)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="hub-label">
+              Tipo de registro
+              <select
+                className="field"
+                value={kind}
+                onChange={(e) => setKind(e.target.value as Note["kind"])}
+              >
+                {Object.entries(kinds).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={!segments.length}
+            onClick={() => {
+              const segment =
+                segments.find(
+                  (s) => s.start <= currentTime && s.end >= currentTime,
+                ) ??
+                [...segments].reverse().find((s) => s.start <= currentTime) ??
+                segments[0];
+              if (segment) setSegmentId(segment.id);
+            }}
+          >
+            Usar trecho em reprodução
+          </Button>
+          <label className="hub-label">
+            Título do registro
+            <input
+              className="field"
+              value={title}
+              maxLength={512}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Título da nota ou marcador"
+            />
+          </label>
+          <label className="hub-label">
+            Sua anotação
+            <textarea
+              className="field min-h-24 resize-none"
+              value={body}
+              maxLength={12000}
+              onChange={(e) => setBody(e.target.value)}
+            />
+          </label>
+          <Button
+            variant="primary"
+            type="submit"
+            disabled={mutation.busy || !segmentId || !title.trim()}
+          >
+            Salvar no caderno
+          </Button>
+          <MutationFeedback {...mutation} />
+        </form>
+      </HubDisclosure>
       <div className="mt-6">
         <ResourceState
           {...resource}
@@ -357,7 +371,7 @@ export function MeetingNotebook({
           empty={
             resource.data?.items.length === 0
               ? {
-                  title: "Marque seu primeiro momento",
+                  title: "Nenhum registro nesta gravação",
                   text: "Seus registros ficam ligados ao trecho original e também aparecem no caderno do projeto.",
                 }
               : undefined
@@ -376,7 +390,7 @@ export function MeetingNotebook({
           {resource.data && resource.data.total > 100 && (
             <p className="hub-field-hint">
               Mostrando os 100 registros mais recentes. Consulte os demais no
-              Caderno de escuta.
+              Caderno.
             </p>
           )}
         </ResourceState>

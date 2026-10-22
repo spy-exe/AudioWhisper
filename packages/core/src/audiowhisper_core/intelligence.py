@@ -53,13 +53,13 @@ def validate_evidence(output: EvidenceOutput, segments):
     sources = {s.id: s.text for s in segments}
     for item in output.items:
         if any(source not in sources for source in item.source_segment_ids):
-            raise ValueError("A IA retornou uma referência que não pertence à transcrição.")
+            raise ValueError("A resposta contém uma referência que não pertence à transcrição.")
         cited = [sources[source] for source in item.source_segment_ids]
         if any(not quote.strip() or not any(quote.casefold() in text.casefold() for text in cited) for quote in item.evidence_quotes):
-            raise ValueError("Uma citação da IA não corresponde ao áudio transcrito. Gere novamente.")
+            raise ValueError("Uma citação do documento não corresponde à transcrição atual. Gere novamente.")
         # Every reference must support at least one literal quote.
         if any(not any(quote.casefold() in text.casefold() for quote in item.evidence_quotes) for text in cited):
-            raise ValueError("A IA associou um trecho sem evidência literal.")
+            raise ValueError("Uma citação está sem evidência literal.")
         for field in ("assignee", "due_date"):
             value = getattr(item, field)
             if value and not any(re.search(r"(?<!\w)" + re.escape(value.casefold()) + r"(?!\w)", text.casefold()) for text in cited):
@@ -142,7 +142,7 @@ class OllamaProvider:
         for item in selection.items:
             ids = list(dict.fromkeys(item.source_segment_ids))
             if any(source not in sources for source in ids):
-                raise ValueError("A IA retornou uma referência que não pertence à transcrição.")
+                raise ValueError("A resposta contém uma referência que não pertence à transcrição.")
             # Quotes come from persisted sources, never model-generated strings.
             items.append(EvidenceItem(**{**item.model_dump(), "source_segment_ids": ids},
                                       evidence_quotes=[sources[source] for source in ids]))
@@ -157,7 +157,7 @@ def document_markdown(kind, items, segments):
         timestamps[segment.id] = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
     titles = {"minutes": "Ata da reunião", "briefing": "Briefing executivo", "summary": "Resumo", "decisions": "Decisões",
               "actions": "Plano de ação", "risks": "Riscos", "questions": "Perguntas em aberto", "email": "E-mail de acompanhamento", "custom": "Análise"}
-    lines = [f"# {titles[kind]}", "", "Rascunho gerado por IA local. Revise antes de compartilhar.", ""]
+    lines = [f"# {titles[kind]}", "", "Rascunho. Revise o conteúdo e as fontes antes de compartilhar.", ""]
     for item in items:
         lines.extend([f"- {item['text']}", f"  Fontes: {', '.join(timestamps[source] for source in item['source_segment_ids'])}"])
         if item["kind"] == "action":

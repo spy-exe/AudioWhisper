@@ -38,7 +38,7 @@ export function IntelligenceSettings() {
   return (
     <>
       <Panel raised className="space-y-4 p-5">
-        <h2 className="text-sm font-semibold">Inteligência local</h2>
+        <h2 className="text-sm font-semibold">Geração de documentos</h2>
         <p className="text-xs leading-relaxed text-text-muted">
           Ollama é o motor inicial. Os modelos precisam estar instalados no
           serviço local configurado.

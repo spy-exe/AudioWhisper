@@ -99,7 +99,7 @@ export function UploadDropzone() {
     <div className="flex flex-col gap-6">
       <motion.button
         type="button"
-        aria-label="Área de upload — arraste arquivos ou pressione Enter para selecionar"
+        aria-label="Área de upload · arraste arquivos ou pressione Enter para selecionar"
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => {
           e.preventDefault();

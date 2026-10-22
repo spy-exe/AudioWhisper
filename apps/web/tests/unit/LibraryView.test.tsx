@@ -56,7 +56,7 @@ it("resets pagination when changing filters and preserves it for page navigation
   nav.params = new URLSearchParams("q=backup&offset=20");
   vi.mocked(api.library).mockResolvedValue({ ...empty, total: 60, offset: 20 });
   render(<LibraryView />);
-  await screen.findByText("60 gravações · 21–40");
+  await screen.findByText("60 gravações · 21 a 40");
   fireEvent.click(screen.getByRole("button", { name: "Próxima" }));
   expect(nav.replace).toHaveBeenLastCalledWith("/library?q=backup&offset=40", { scroll: false });
   fireEvent.change(screen.getByRole("combobox", { name: "Filtrar por status" }), { target: { value: "completed" } });

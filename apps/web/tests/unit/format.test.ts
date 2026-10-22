@@ -23,7 +23,7 @@ describe("formatDuration", () => {
     expect(formatDuration(125)).toBe("2m05s");
   });
   it("handles null", () => {
-    expect(formatDuration(null)).toBe("—");
+    expect(formatDuration(null)).toBe("Não disponível");
   });
 });
 

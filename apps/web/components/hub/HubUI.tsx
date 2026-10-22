@@ -14,13 +14,11 @@ import {
 import { useWorkspaceResource } from "@/hooks/useWorkspaceResource";
 
 export function HubPage({
-  eyebrow,
   title,
   description,
   children,
   action,
 }: {
-  eyebrow: string;
   title: string;
   description: string;
   children: ReactNode;
@@ -30,12 +28,8 @@ export function HubPage({
     <div className="hub-page">
       <header className="hub-heading">
         <div>
-          <p className="eyebrow">
-            <span className="eyebrow-dot" />
-            {eyebrow}
-          </p>
           <h1>{title}</h1>
-          <p className="hub-description">{description}</p>
+          {description && <p className="hub-description">{description}</p>}
         </div>
         {action}
       </header>
@@ -45,23 +39,58 @@ export function HubPage({
 }
 export function HubPanel({
   title,
-  label,
   children,
   className = "",
 }: {
   title: string;
-  label?: string;
   children: ReactNode;
   className?: string;
 }) {
   return (
     <section className={`hub-panel ${className}`}>
       <header className="hub-panel-heading">
-        {label && <span className="hub-kicker">{label}</span>}
         <h2>{title}</h2>
       </header>
       {children}
     </section>
+  );
+}
+export function HubDisclosure({
+  title,
+  children,
+  className = "",
+}: {
+  title: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <details className={`hub-create ${className}`}>
+      <summary>
+        {title}
+        <Icon name="chevron" />
+      </summary>
+      <div className="hub-create-content">{children}</div>
+    </details>
+  );
+}
+export function FilterDisclosure({
+  count,
+  children,
+  label = "Filtros",
+}: {
+  count: number;
+  children: ReactNode;
+  label?: string;
+}) {
+  return (
+    <details className="hub-filter-disclosure">
+      <summary>
+        {label}
+        {count > 0 ? ` (${count})` : ""}
+      </summary>
+      {children}
+    </details>
   );
 }
 export function ResourceState({
@@ -86,7 +115,7 @@ export function ResourceState({
       >
         <div className="skeleton h-6 w-2/3" />
         <div className="skeleton h-24" />
-        <span>Carregando seu workspace…</span>
+        <span>Carregando…</span>
       </div>
     );
   if (error)
@@ -270,7 +299,7 @@ export function Pagination({
   return (
     <nav className="hub-pagination" aria-label="Paginação">
       <span>
-        {page.offset + 1}–{Math.min(page.total, page.offset + page.limit)} de{" "}
+        {page.offset + 1} a {Math.min(page.total, page.offset + page.limit)} de{" "}
         {page.total}
       </span>
       <Button

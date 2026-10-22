@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { CommandCenter } from "@/components/hub/CommandCenter";
-export const metadata = { title: "Central — AudioWhisper" };
+export const metadata = { title: "Central · AudioWhisper" };
 export default function Page() {
   return (
     <Suspense

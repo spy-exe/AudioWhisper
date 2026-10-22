@@ -377,7 +377,7 @@ export function TranscriptEditor({ jobId, media }: TranscriptEditorProps) {
             onClick={() => setAiVisible(!aiVisible)}
             aria-expanded={aiVisible}
           >
-            {aiVisible ? "Recolher IA" : "Abrir assistente"}
+            {aiVisible ? "Recolher documentos" : "Abrir documentos"}
           </Button>
           <AnimatePresence mode="wait">
             {saveStatus !== "idle" && (

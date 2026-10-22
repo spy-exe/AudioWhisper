@@ -67,7 +67,7 @@ function AnswerCard({
           <Icon name="studio" />
           {question.status === "queued"
             ? "Na fila local · aguardando os trabalhos anteriores"
-            : "Consultando os trechos recuperados no Ollama…"}
+            : "Consultando as gravações…"}
         </p>
       )}
       {question.status === "failed" && (
@@ -111,8 +111,8 @@ function AnswerCard({
             </p>
           )}
           <p className="hub-field-hint">
-            {question.retrieval_count} trechos recuperados · {question.model} ·
-            confira a interpretação antes de usar.
+            {question.retrieval_count} trechos consultados. Confira as fontes
+            antes de usar a resposta.
           </p>
           {question.stale && (
             <p className="text-warning">
@@ -124,7 +124,7 @@ function AnswerCard({
           <div className="hub-inline-actions">
             <Button
               size="sm"
-                disabled={mutation.busy || question.items.length === 0}
+              disabled={mutation.busy || question.items.length === 0}
               onClick={() =>
                 void mutation.execute(
                   () =>
@@ -184,15 +184,11 @@ export function KnowledgeView() {
   }, [project]);
   return (
     <HubPage
-      eyebrow="INTELIGÊNCIA SOBRE A SUA MEMÓRIA"
-      title="Pergunte às conversas."
-      description="Cruze reuniões, recupere contexto e compare decisões. A resposta vem com caminhos de volta às falas que a sustentam."
+      title="Consultas"
+      description="Faça uma pergunta sobre as gravações e confira as fontes da resposta."
     >
       <div className="knowledge-layout">
-        <HubPanel
-          title="Uma boa pergunta abre caminhos"
-          label="ASSISTENTE LOCAL"
-        >
+        <HubPanel title="Nova consulta">
           <form
             noValidate
             className="hub-form"
@@ -232,11 +228,20 @@ export function KnowledgeView() {
               onChange={(value) => filters.change("project", value)}
               label="Contexto da consulta"
             />
-            <LocalModelField
-              resource={models}
-              value={effectiveModel}
-              onChange={setModel}
-            />
+            <details className="hub-disclosure">
+              <summary>Modelo e limites da consulta</summary>
+              <div className="hub-form mt-4">
+                <LocalModelField
+                  resource={models}
+                  value={effectiveModel}
+                  onChange={setModel}
+                />
+                <p className="hub-field-hint">
+                  Busca por palavras em até 80 trechos. A resposta pode não
+                  cobrir toda a biblioteca.
+                </p>
+              </div>
+            </details>
             <details
               className="hub-disclosure"
               onToggle={(e) => setChoosing(e.currentTarget.open)}
@@ -256,10 +261,17 @@ export function KnowledgeView() {
               )}
             </details>
             <p id="retrieval-help" className="hub-field-hint">
-              A recuperação usa palavras da pergunta e consulta até 80 trechos
-              relevantes. Sem seleção, busca em todas as gravações concluídas
-              deste contexto. A resposta pode não cobrir toda a biblioteca.
+              Consulte as fontes antes de usar a resposta. Sem seleção, são
+              consideradas as gravações concluídas do projeto.
             </p>
+            {!models.loading && !effectiveModel && (
+              <p role="alert" className="text-warning">
+                {models.error ||
+                  models.data?.error ||
+                  "Nenhum modelo de processamento disponível."}{" "}
+                Abra “Modelo e limites da consulta” para verificar a conexão.
+              </p>
+            )}
             <Button
               variant="primary"
               type="submit"
@@ -267,32 +279,15 @@ export function KnowledgeView() {
                 mutation.busy || !effectiveModel || question.trim().length < 3
               }
             >
-              <Icon name="sparkle" />
+              <Icon name="search" />
               Consultar gravações
             </Button>
             <MutationFeedback {...mutation} />
           </form>
         </HubPanel>
-        <aside className="knowledge-aside">
-          <span className="knowledge-orbit" aria-hidden="true">
-            <Icon name="studio" />
-            <i />
-            <i />
-          </span>
-          <h2>Contexto que se conecta.</h2>
-          <p>
-            Faça perguntas específicas, compare encaminhamentos e abra o áudio
-            para conferir cada interpretação.
-          </p>
-          <ul>
-            <li>Seu modelo local no Ollama</li>
-            <li>Citações copiadas do texto original</li>
-            <li>Ausências continuam como não encontradas</li>
-          </ul>
-        </aside>
       </div>
       <div className="hub-results-heading">
-        <h2>Seu histórico de perguntas</h2>
+        <h2>Histórico de consultas</h2>
         <span>{history.data?.total ?? 0} consultas</span>
       </div>
       <ResourceState
@@ -301,7 +296,7 @@ export function KnowledgeView() {
         empty={
           history.data?.items.length === 0
             ? {
-                title: "Sua primeira conexão começa com uma pergunta",
+                title: "Nenhuma consulta realizada",
                 text: "Escolha um tema das suas reuniões e consulte o acervo local.",
               }
             : undefined

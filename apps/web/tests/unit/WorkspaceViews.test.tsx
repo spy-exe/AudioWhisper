@@ -66,7 +66,8 @@ it("creates a project and keeps the form on server errors", async () => {
     new Error("Já existe um projeto"),
   );
   render(<ProjectsView />);
-  await screen.findByText("Seu próximo projeto começa aqui");
+  fireEvent.click(screen.getByText("Novo projeto", { exact: true }));
+  await screen.findByText("Nenhum projeto encontrado");
   fireEvent.change(screen.getByLabelText("Nome do projeto"), {
     target: { value: "Infra" },
   });
@@ -79,7 +80,8 @@ it("creates a project and keeps the form on server errors", async () => {
 
 it("creates a task with an explicit date without inventing an assignee", async () => {
   render(<TasksView />);
-  await screen.findByText("Um próximo passo faz a diferença");
+  fireEvent.click(screen.getByText("Nova tarefa", { exact: true }));
+  await screen.findByText("Nenhuma tarefa encontrada");
   fireEvent.change(screen.getByLabelText("Título da tarefa"), {
     target: { value: "Revisar alertas" },
   });
@@ -126,7 +128,7 @@ it("search results point to the exact segment and expose a clear action", async 
 
 it("submits a local question and preserves the selected model", async () => {
   render(<KnowledgeView />);
-  await screen.findByRole("option", { name: "local" });
+  await screen.findByRole("option", { name: "local", hidden: true });
   fireEvent.change(screen.getByLabelText("Sua pergunta"), {
     target: { value: "O que mudou nos backups?" },
   });
@@ -144,11 +146,14 @@ it("submits a local question and preserves the selected model", async () => {
 
 it("creates a recipe with automatic generation off by default", async () => {
   render(<RecipesView />);
-  await screen.findByRole("option", { name: "local" });
-  fireEvent.change(screen.getByLabelText("Nome da receita"), {
+  fireEvent.click(
+    screen.getByText("Novo modelo de documento", { exact: true }),
+  );
+  await screen.findByRole("option", { name: "local", hidden: true });
+  fireEvent.change(screen.getByLabelText("Nome do modelo"), {
     target: { value: "Ata técnica" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Salvar receita" }));
+  fireEvent.click(screen.getByRole("button", { name: "Salvar modelo" }));
   await waitFor(() =>
     expect(workspaceApi.createRecipe).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -239,7 +244,8 @@ it("binds a notebook chapter to the segment in playback", async () => {
       onSource={vi.fn()}
     />,
   );
-  await screen.findByText("Marque seu primeiro momento");
+  await screen.findByText("Nenhum registro nesta gravação");
+  fireEvent.click(screen.getByText("Adicionar registro", { exact: true }));
   fireEvent.click(
     screen.getByRole("button", { name: "Usar trecho em reprodução" }),
   );
@@ -471,7 +477,13 @@ it.each(["task", "recipe"])(
   async (kind) => {
     nav.params = new URLSearchParams("project=Infra");
     const view = render(kind === "task" ? <TasksView /> : <RecipesView />);
-    const label = kind === "task" ? "Título da tarefa" : "Nome da receita";
+    fireEvent.click(
+      screen.getByText(
+        kind === "task" ? "Nova tarefa" : "Novo modelo de documento",
+        { exact: true },
+      ),
+    );
+    const label = kind === "task" ? "Título da tarefa" : "Nome do modelo";
     const input = await screen.findByLabelText(label);
     fireEvent.change(input, { target: { value: "Rascunho preservado" } });
     if (kind === "task")
@@ -481,7 +493,7 @@ it.each(["task", "recipe"])(
     expect(screen.getByLabelText(label)).toHaveValue("Rascunho preservado");
     expect(
       screen.getByLabelText(
-        kind === "task" ? "Projeto da tarefa" : "Contexto da receita",
+        kind === "task" ? "Projeto da tarefa" : "Projeto do modelo",
       ),
     ).toHaveValue("Produto");
   },

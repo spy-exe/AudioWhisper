@@ -40,7 +40,7 @@ export function Waveform({ mediaElement }: WaveformProps) {
     <div
       ref={containerRef}
       role="img"
-      aria-label="Forma de onda do áudio — clique para navegar"
+      aria-label="Forma de onda do áudio · clique para navegar"
       className="w-full overflow-hidden rounded-md border border-border bg-surface-raised px-1 py-1"
     />
   );

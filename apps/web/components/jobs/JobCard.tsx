@@ -38,7 +38,7 @@ export function JobCard({ job }: { job: TranscriptionJob }) {
         </div>
         {inProgress && <ProgressBar value={job.progress} />}
         <div className="flex items-center justify-between text-xs text-text-muted">
-          <span>{job.current_stage ?? "—"}</span>
+          <span>{job.current_stage ?? "Não disponível"}</span>
           <span>{formatRelativeTime(job.updated_at)}</span>
         </div>
       </Link>

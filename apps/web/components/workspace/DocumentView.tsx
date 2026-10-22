@@ -56,7 +56,6 @@ export function DocumentView({
               ? "Revisado"
               : "Rascunho · revisar"}
         </Badge>
-        <span className="text-xs text-text-muted">{document.model}</span>
       </div>
       {document.stale && (
         <p role="alert" className="text-xs leading-relaxed text-warning">
@@ -115,7 +114,12 @@ export function DocumentView({
           />
         </label>
       ) : (
-        <div className="max-h-[65vh] overflow-y-auto rounded-xl border border-border bg-background/40 p-5">
+        <div
+          role="region"
+          aria-label="Prévia do documento"
+          tabIndex={0}
+          className="max-h-[65vh] overflow-y-auto rounded-xl border border-border bg-background/40 p-5"
+        >
           <DocumentContent content={draft} headingLevel={3} />
         </div>
       )}

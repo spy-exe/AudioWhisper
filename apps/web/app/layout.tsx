@@ -11,13 +11,21 @@ import { MotionPreferences } from "@/components/ui/MotionPreferences";
 import "./globals.css";
 import "./workspace.css";
 
-const heading = localFont({ src: "../node_modules/@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2", variable: "--font-heading", display: "swap" });
-const body = localFont({ src: "../node_modules/@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2", variable: "--font-body", display: "swap" });
+const heading = localFont({
+  src: "../node_modules/@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2",
+  variable: "--font-heading",
+  display: "swap",
+});
+const body = localFont({
+  src: "../node_modules/@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2",
+  variable: "--font-body",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "AudioWhisper 2.0 — Studio",
+  title: "AudioWhisper 2.0 · Studio",
   description:
-    "Inteligência local sobre áudio: transcrição, revisão e informação pronta para ação.",
+    "Gravação, transcrição e organização de áudio no seu computador.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -27,11 +35,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <AuthGate>
           <SettingsProvider>
             <MotionPreferences>
-            <TopBar />
-            <LiveStudio />
-            <main id="main-content" className="app-content min-w-0">
-              {children}
-            </main>
+              <TopBar />
+              <LiveStudio />
+              <main id="main-content" className="app-content min-w-0">
+                {children}
+              </main>
             </MotionPreferences>
           </SettingsProvider>
         </AuthGate>

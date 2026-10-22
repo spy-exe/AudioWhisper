@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { EvidenceSearch } from "@/components/hub/EvidenceSearch";
-export const metadata = { title: "Buscar trechos — AudioWhisper" };
+export const metadata = { title: "Buscar trechos · AudioWhisper" };
 export default function Page() {
   return (
     <Suspense

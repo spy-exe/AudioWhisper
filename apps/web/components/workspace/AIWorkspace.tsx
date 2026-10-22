@@ -44,7 +44,11 @@ export function AIWorkspace({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [refresh, setRefresh] = useState(0);
-  useEffect(() => { setSelected(new URLSearchParams(window.location.search).get("document") ?? ""); }, [jobId]);
+  useEffect(() => {
+    setSelected(
+      new URLSearchParams(window.location.search).get("document") ?? "",
+    );
+  }, [jobId]);
   useEffect(() => {
     let active = true;
     api
@@ -103,16 +107,16 @@ export function AIWorkspace({
   return (
     <aside
       className="min-w-0 rounded-xl border border-border bg-surface"
-      aria-label="Assistente de IA"
+      aria-label="Documentos"
     >
       <div className="flex items-center gap-3 border-b border-border p-5">
         <span className="flex size-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
-          <Icon name="sparkle" className="size-4" />
+          <Icon name="file" className="size-4" />
         </span>
         <div>
-          <h2 className="text-lg font-semibold">Assistente de IA</h2>
+          <h2 className="text-lg font-semibold">Documentos</h2>
           <p className="mt-0.5 text-xs text-text-muted">
-            Contexto que vira ação · Ollama local
+            Prepare e revise documentos desta gravação.
           </p>
         </div>
       </div>
@@ -132,21 +136,27 @@ export function AIWorkspace({
               ))}
             </select>
           </label>
-          <label className="text-xs text-text-secondary">
-            Modelo local
-            <select
-              className="field mt-1"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              disabled={!provider?.models.length}
-            >
-              <option value="">Selecione</option>
-              {provider?.models.map((name) => (
-                <option key={name}>{name}</option>
-              ))}
-            </select>
-          </label>
         </div>
+        <details className="hub-disclosure">
+          <summary>Opções de geração</summary>
+          <div className="pt-4">
+            {" "}
+            <label className="text-xs text-text-secondary">
+              Modelo local
+              <select
+                className="field mt-1"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                disabled={!provider?.models.length}
+              >
+                <option value="">Selecione</option>
+                {provider?.models.map((name) => (
+                  <option key={name}>{name}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </details>
         {kind === "custom" && (
           <label className="block text-xs text-text-secondary">
             O que você quer analisar?
@@ -225,10 +235,9 @@ export function AIWorkspace({
         ) : !document ? (
           <div className="space-y-3 border-t border-border py-6 text-center">
             <Icon name="file" className="mx-auto size-7 text-text-muted" />
-            <h3 className="text-sm">A informação já está na conversa.</h3>
+            <h3 className="text-sm">Nenhum documento gerado.</h3>
             <p className="text-xs leading-relaxed text-text-muted">
-              Escolha um documento para organizar o conteúdo. Cada conclusão
-              terá um caminho de volta à fonte.
+              Escolha o tipo de documento e clique em Gerar documento.
             </p>
           </div>
         ) : (
@@ -261,7 +270,7 @@ export function AIWorkspace({
               <div role="status" className="space-y-3">
                 <p className="text-xs text-text-muted">
                   {document.status === "queued"
-                    ? "Aguardando o motor local. O áudio e a IA compartilham a fila de processamento."
+                    ? "Na fila de processamento, junto aos trabalhos de transcrição."
                     : "Analisando a transcrição e verificando as fontes…"}
                 </p>
                 <div className="skeleton h-40" />

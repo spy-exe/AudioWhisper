@@ -6,6 +6,7 @@ import { formatTimestamp } from "@/lib/format";
 import { Icon } from "@/components/ui/Icon";
 import {
   HubPage,
+  FilterDisclosure,
   Pagination,
   ProjectField,
   QuerySearch,
@@ -31,9 +32,8 @@ export function EvidenceSearch() {
   );
   return (
     <HubPage
-      eyebrow="CADA RESPOSTA TEM UMA ORIGEM"
-      title="Encontre o momento."
-      description="Busque uma palavra ou expressão entre suas gravações e volte direto ao ponto em que ela foi dita."
+      title="Buscar trechos"
+      description="Encontre uma fala e abra o áudio no trecho correspondente."
     >
       <div className="search-stage">
         <QuerySearch
@@ -42,34 +42,39 @@ export function EvidenceSearch() {
           label="Buscar conteúdo nas gravações"
           placeholder="O que você quer encontrar?"
         />
-        <div className="hub-filter-row">
-          <ProjectField
-            value={filters.params.get("project") ?? ""}
-            onChange={(value) => filters.change("project", value)}
-          />
-          <label className="hub-label">
-            Falante
-            <input
-              key={filters.params.get("speaker") ?? ""}
-              className="field"
-              defaultValue={filters.params.get("speaker") ?? ""}
-              placeholder="Nome ou identificação · Enter para aplicar"
-              maxLength={128}
-              onBlur={(e) => {
-                if (e.target.value !== (filters.params.get("speaker") ?? ""))
-                  filters.change("speaker", e.target.value.trim());
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.nativeEvent.isComposing)
-                  e.currentTarget.blur();
-              }}
+        <FilterDisclosure
+          count={
+            [
+              filters.params.get("project"),
+              filters.params.get("speaker"),
+            ].filter(Boolean).length
+          }
+        >
+          <div className="hub-filter-row">
+            <ProjectField
+              value={filters.params.get("project") ?? ""}
+              onChange={(value) => filters.change("project", value)}
             />
-          </label>
-        </div>
-        <p className="hub-field-hint">
-          Busca por palavras e expressões, com acentos normalizados e prefixo na
-          última palavra. Cada resultado mantém o texto original.
-        </p>
+            <label className="hub-label">
+              Falante
+              <input
+                key={filters.params.get("speaker") ?? ""}
+                className="field"
+                defaultValue={filters.params.get("speaker") ?? ""}
+                placeholder="Nome ou identificação · Enter para aplicar"
+                maxLength={128}
+                onBlur={(e) => {
+                  if (e.target.value !== (filters.params.get("speaker") ?? ""))
+                    filters.change("speaker", e.target.value.trim());
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.nativeEvent.isComposing)
+                    e.currentTarget.blur();
+                }}
+              />
+            </label>
+          </div>
+        </FilterDisclosure>
       </div>
       <ResourceState
         {...resource}
@@ -77,8 +82,8 @@ export function EvidenceSearch() {
         empty={
           !q
             ? {
-                title: "O conhecimento está nas suas conversas",
-                text: "Comece com um tema específico: backup, proposta, orçamento ou o nome de um projeto.",
+                title: "Busque no conteúdo das gravações",
+                text: "Digite uma palavra ou expressão da transcrição.",
               }
             : resource.data?.items.length === 0
               ? {

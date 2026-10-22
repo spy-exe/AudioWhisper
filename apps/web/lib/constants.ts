@@ -16,10 +16,10 @@ export const ACCEPTED_EXTENSIONS = [
 export const ACCEPTED_ACCEPT_ATTR = ACCEPTED_EXTENSIONS.map((ext) => `.${ext}`).join(",");
 
 export const MODEL_OPTIONS = [
-  { value: "small", label: "Small — rápido, menos preciso" },
-  { value: "medium", label: "Medium — equilíbrio" },
-  { value: "turbo", label: "Turbo (large-v3) — recomendado" },
-  { value: "large-v3", label: "Large-v3 — mais preciso, mais lento" },
+  { value: "small", label: "Small · rápido, menos preciso" },
+  { value: "medium", label: "Medium · equilíbrio" },
+  { value: "turbo", label: "Turbo (large-v3) · recomendado" },
+  { value: "large-v3", label: "Large-v3 · mais preciso, mais lento" },
 ] as const;
 
 export const LANGUAGE_OPTIONS = [

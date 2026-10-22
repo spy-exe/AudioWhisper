@@ -9,7 +9,11 @@ const meeting = path.join(directory, "fixtures", "meeting.wav");
 test.use({
   permissions: ["microphone"],
   launchOptions: {
-    args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream", `--use-file-for-fake-audio-capture=${speech}`],
+    args: [
+      "--use-fake-device-for-media-stream",
+      "--use-fake-ui-for-media-stream",
+      `--use-file-for-fake-audio-capture=${speech}`,
+    ],
   },
 });
 
@@ -34,7 +38,7 @@ test("library search, clear and narrow layout stay usable", async ({
   ).toBeTruthy();
 });
 
-test("local AI document can be generated, reviewed, exported and revoked", async ({
+test("local document can be generated, reviewed, exported and revoked", async ({
   page,
   request,
 }, testInfo) => {
@@ -47,12 +51,13 @@ test("local AI document can be generated, reviewed, exported and revoked", async
   await page.goto("/");
   await page.locator('input[type="file"]').setInputFiles(meeting);
   await page.getByRole("button", { name: "Transcrever", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "Assistente de IA" }),
-  ).toBeVisible({ timeout: 300000 });
+  await expect(page.getByRole("heading", { name: "Documentos" })).toBeVisible({
+    timeout: 300000,
+  });
   await page
     .getByRole("combobox", { name: "Documento", exact: true })
     .selectOption("summary");
+  await page.getByText("Opções de geração", { exact: true }).click();
   await page
     .getByRole("combobox", { name: "Modelo local", exact: true })
     .selectOption(provider.models[0]);
@@ -86,9 +91,11 @@ test("local AI document can be generated, reviewed, exported and revoked", async
   await publicPage.reload();
   await expect(publicPage.getByText(/link expirou/)).toBeVisible();
   await publicPage.close();
-  const workspace = page.getByRole("complementary", { name: "Assistente de IA" });
-  await expect(workspace.getByText(/Fontes: \d{2}:\d{2}:\d{2}/)).toBeVisible();
-  await expect(workspace).not.toContainText(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i);
+  const workspace = page.getByRole("complementary", { name: "Documentos" });
+  await expect(workspace.getByText(/Fontes: \d{2}:\d{2}:\d{2}/).first()).toBeVisible();
+  await expect(workspace).not.toContainText(
+    /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i,
+  );
   await workspace.getByText("Exportar", { exact: true }).click();
   for (const format of ["PDF", "DOCX"]) {
     const downloaded = page.waitForEvent("download");
@@ -98,22 +105,34 @@ test("local AI document can be generated, reviewed, exported and revoked", async
     const destination = testInfo.outputPath(`document.${format.toLowerCase()}`);
     await download.saveAs(destination);
     const data = await readFile(destination);
-    expect(data.subarray(0, format === "PDF" ? 4 : 2).toString())
-      .toBe(format === "PDF" ? "%PDF" : "PK");
+    expect(data.subarray(0, format === "PDF" ? 4 : 2).toString()).toBe(
+      format === "PDF" ? "%PDF" : "PK",
+    );
   }
   await workspace.getByText("Exportar", { exact: true }).click();
   const pause = page.getByRole("button", { name: "Pausar", exact: true });
   if (await pause.isVisible()) await pause.click();
   await page.keyboard.press("Control+Home");
-  await page.screenshot({ path: testInfo.outputPath("workspace.png"), fullPage: true });
+  await page.screenshot({
+    path: testInfo.outputPath("workspace.png"),
+    fullPage: true,
+  });
 });
 
 test.describe("live capture with a synthetic microphone", () => {
-  test("recovers saved audio after upload failure and page reload", async ({ page }) => {
-    page.on("dialog", (dialog) => { void dialog.accept(); });
-    await page.route("**/api/live/*/chunks/*", (route) => route.abort("internetdisconnected"));
+  test("recovers saved audio after upload failure and page reload", async ({
+    page,
+  }) => {
+    page.on("dialog", (dialog) => {
+      void dialog.accept();
+    });
+    await page.route("**/api/live/*/chunks/*", (route) =>
+      route.abort("internetdisconnected"),
+    );
     await page.goto("/");
-    await page.getByRole("textbox", { name: "Título da captura" }).fill("QA Recuperação de captura");
+    await page
+      .getByRole("textbox", { name: "Título da captura" })
+      .fill("QA Recuperação de captura");
     const failed = page.waitForEvent("requestfailed", {
       predicate: (request) => request.url().includes("/chunks/"),
     });
@@ -122,9 +141,13 @@ test.describe("live capture with a synthetic microphone", () => {
     await page.unroute("**/api/live/*/chunks/*");
     await page.reload();
     await page.getByRole("button", { name: "Recuperar captura" }).click();
-    await expect(page.getByText("Gravação consolidada")).toBeVisible({ timeout: 300000 });
+    await expect(page.getByText("Gravação consolidada")).toBeVisible({
+      timeout: 300000,
+    });
     await page.getByRole("link", { name: "Abrir transcrição" }).click();
-    await expect(page.getByRole("textbox", { name: /^Texto em/ }).first()).not.toHaveValue("");
+    await expect(
+      page.getByRole("textbox", { name: /^Texto em/ }).first(),
+    ).not.toHaveValue("");
   });
 
   test("captures, persists and finalizes audio without leaving the Studio", async ({

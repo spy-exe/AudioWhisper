@@ -9,6 +9,7 @@ import { formatDuration, formatRelativeTime, statusLabel } from "@/lib/format";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
+import { FilterDisclosure } from "@/components/hub/HubUI";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 
 export function LibraryView({ recent = false }: { recent?: boolean }) {
@@ -130,31 +131,44 @@ export function LibraryView({ recent = false }: { recent?: boolean }) {
             <option value="failed">Com falha</option>
             <option value="cancelled">Cancelados</option>
           </select>
-          <div className="grid min-w-0 grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-3">
-          {(
-            [
-              ["folder", "Pasta"],
-              ["project", "Projeto"],
-              ["tag", "Tag"],
-            ] as const
-          ).map(([key, label]) => (
-            <label
-              key={key}
-              className="flex min-w-0 items-center gap-2 text-xs text-text-muted"
+          <div className="sm:col-span-2">
+            <FilterDisclosure
+              label="Pasta, projeto e tags"
+              count={
+                [
+                  search.get("folder"),
+                  search.get("project"),
+                  search.get("tag"),
+                ].filter(Boolean).length
+              }
             >
-              {label}
-              <input
-                aria-label={`Filtrar por ${label.toLowerCase()}`}
-                className="field min-w-0 flex-1"
-                defaultValue={search.get(key) ?? ""}
-                onBlur={(e) => change(key, e.target.value.trim())}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter")
-                    change(key, e.currentTarget.value.trim());
-                }}
-              />
-            </label>
-          ))}
+              <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-3">
+                {(
+                  [
+                    ["folder", "Pasta"],
+                    ["project", "Projeto"],
+                    ["tag", "Tag"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <label
+                    key={key}
+                    className="flex min-w-0 items-center gap-2 text-xs text-text-muted"
+                  >
+                    {label}
+                    <input
+                      aria-label={`Filtrar por ${label.toLowerCase()}`}
+                      className="field min-w-0 flex-1"
+                      defaultValue={search.get(key) ?? ""}
+                      onBlur={(e) => change(key, e.target.value.trim())}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter")
+                          change(key, e.currentTarget.value.trim());
+                      }}
+                    />
+                  </label>
+                ))}
+              </div>
+            </FilterDisclosure>
           </div>
         </div>
       )}
@@ -180,7 +194,10 @@ export function LibraryView({ recent = false }: { recent?: boolean }) {
             aria-label="Carregando biblioteca"
           >
             {Array.from({ length: 5 }, (_, i) => (
-              <div key={i} className="flex min-h-25 items-center gap-4 p-5 sm:px-6">
+              <div
+                key={i}
+                className="flex min-h-25 items-center gap-4 p-5 sm:px-6"
+              >
                 <div className="skeleton size-12 shrink-0" />
                 <div className="flex-1 space-y-2">
                   <div className="skeleton h-4 w-2/3" />
@@ -211,8 +228,7 @@ export function LibraryView({ recent = false }: { recent?: boolean }) {
                       {item.project ||
                         item.folder ||
                         (item.media_type === "audio" ? "Áudio" : "Vídeo")}{" "}
-                      ·{" "}
-                      {formatRelativeTime(item.job.updated_at)}
+                      · {formatRelativeTime(item.job.updated_at)}
                     </p>
                     {!["completed", "failed", "cancelled"].includes(
                       item.job.status,
@@ -227,7 +243,7 @@ export function LibraryView({ recent = false }: { recent?: boolean }) {
                   <span className="font-mono text-xs text-text-muted">
                     {item.duration_seconds != null
                       ? formatDuration(item.duration_seconds)
-                      : "—"}
+                      : "Não disponível"}
                   </span>
                   <Badge
                     tone={
@@ -288,7 +304,7 @@ export function LibraryView({ recent = false }: { recent?: boolean }) {
             <span>
               {page.total} gravações
               {page.total > 0 &&
-                ` · ${Math.min(page.offset + 1, page.total)}–${Math.min(page.offset + page.limit, page.total)}`}
+                ` · ${Math.min(page.offset + 1, page.total)} a ${Math.min(page.offset + page.limit, page.total)}`}
             </span>
             <div className="flex gap-2">
               <Button

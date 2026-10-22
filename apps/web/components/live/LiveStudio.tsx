@@ -5,7 +5,10 @@ import { createPortal } from "react-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { formatDuration } from "@/lib/format";
 import { LiveAudio, type CapturedChunk } from "@/lib/live-audio";
-import { CaptureWakeLock, type CaptureWakeState } from "@/lib/capture-wake-lock";
+import {
+  CaptureWakeLock,
+  type CaptureWakeState,
+} from "@/lib/capture-wake-lock";
 import {
   liveStore,
   type StoredCapture,
@@ -52,13 +55,17 @@ export function LiveStudio() {
 
   useEffect(() => {
     try {
-      const selected = new URLSearchParams(window.location.search).get("capture") === "windows"
-        || localStorage.getItem("audiowhisper-capture-mode") === "windows";
+      const selected =
+        new URLSearchParams(window.location.search).get("capture") ===
+          "windows" ||
+        localStorage.getItem("audiowhisper-capture-mode") === "windows";
       if (selected) {
         setMode("windows");
         localStorage.setItem("audiowhisper-capture-mode", "windows");
       }
-    } catch { /* Browser storage is optional for the capture mode preference. */ }
+    } catch {
+      /* Browser storage is optional for the capture mode preference. */
+    }
   }, []);
 
   useEffect(() => {
@@ -77,7 +84,12 @@ export function LiveStudio() {
           setCapture(saved);
           setSeconds(saved.duration);
           const chunks = await liveStore.chunks();
-          if (active) setPending(chunks.filter((chunk) => chunk.jobId === saved.jobId && !chunk.uploaded).length);
+          if (active)
+            setPending(
+              chunks.filter(
+                (chunk) => chunk.jobId === saved.jobId && !chunk.uploaded,
+              ).length,
+            );
         }
       })
       .catch(() => {
@@ -225,8 +237,13 @@ export function LiveStudio() {
     let created: StoredCapture | null = null;
     try {
       const audio = new LiveAudio(
-        (chunk) => { if (captureRef.current) queue(chunk, captureRef.current.jobId); },
-        (value, duration) => { setLevel(value); setSeconds(duration); },
+        (chunk) => {
+          if (captureRef.current) queue(chunk, captureRef.current.jobId);
+        },
+        (value, duration) => {
+          setLevel(value);
+          setSeconds(duration);
+        },
       );
       engine.current = audio;
       // getDisplayMedia requires the original user gesture, before server awaits.
@@ -263,11 +280,15 @@ export function LiveStudio() {
       audio.onInterrupted = setInterrupted;
       audio.onEnded = () => {
         setSourceEnded(true);
-        setError("A fonte de áudio foi encerrada. Consolidando os trechos já gravados.");
+        setError(
+          "A fonte de áudio foi encerrada. Consolidando os trechos já gravados.",
+        );
       };
       await audio.start(source, device);
       setRecording(true);
-      const list = await navigator.mediaDevices.enumerateDevices().catch(() => []);
+      const list = await navigator.mediaDevices
+        .enumerateDevices()
+        .catch(() => []);
       setDevices(list.filter((d) => d.kind === "audioinput"));
     } catch (e) {
       engine.current?.release();
@@ -305,53 +326,61 @@ export function LiveStudio() {
     setBusy(true);
     setError("");
     // Serialize recovery with uploads already in flight and future audio updates.
-    const attempt = uploads.current.catch(() => undefined).then(async () => {
-      await writes.current;
-      const all = (await liveStore.chunks()).filter(
-        (c) => c.jobId === capture.jobId,
-      );
-      const latest = new Map<number, StoredChunk>();
-      for (const chunk of all)
-        if (
-          !latest.has(chunk.sequence) ||
-          latest.get(chunk.sequence)!.revision < chunk.revision
-        )
-          latest.set(chunk.sequence, chunk);
-      for (let chunk of latest.values()) {
-        if (!recording && !chunk.final) {
-          chunk = {
-            ...chunk,
-            final: true,
-            revision: chunk.revision + 1,
-            id: `${capture.jobId}-${chunk.sequence}-${chunk.revision + 1}`,
-            uploaded: false,
-          };
-          await liveStore.putChunk(chunk);
+    const attempt = uploads.current
+      .catch(() => undefined)
+      .then(async () => {
+        await writes.current;
+        const all = (await liveStore.chunks()).filter(
+          (c) => c.jobId === capture.jobId,
+        );
+        const latest = new Map<number, StoredChunk>();
+        for (const chunk of all)
+          if (
+            !latest.has(chunk.sequence) ||
+            latest.get(chunk.sequence)!.revision < chunk.revision
+          )
+            latest.set(chunk.sequence, chunk);
+        for (let chunk of latest.values()) {
+          if (!recording && !chunk.final) {
+            chunk = {
+              ...chunk,
+              final: true,
+              revision: chunk.revision + 1,
+              id: `${capture.jobId}-${chunk.sequence}-${chunk.revision + 1}`,
+              uploaded: false,
+            };
+            await liveStore.putChunk(chunk);
+          }
+          if (!chunk.uploaded) await upload(chunk);
         }
-        if (!chunk.uploaded) await upload(chunk);
-      }
-      setPending(0);
-      if (!recording) {
-        const expected =
-          capture.expected_chunks ??
-          (latest.size ? Math.max(...latest.keys()) + 1 : 0);
-        const response = await fetch(`/api/live/${capture.jobId}/stop`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            expected_chunks: expected,
-            duration: capture.duration,
-          }),
-          signal: AbortSignal.timeout(20000),
-        });
-        if (!response.ok)
-          throw new Error(
-            "Servidor indisponível. Os trechos continuam preservados neste navegador.",
-          );
-        const retried = await fetch(`/api/live/${capture.jobId}/retry`, { method: "POST", signal: AbortSignal.timeout(20000) });
-        if (!retried.ok) throw new Error("O áudio foi enviado, mas o processamento aguarda nova tentativa.");
-      }
-    });
+        setPending(0);
+        if (!recording) {
+          const expected =
+            capture.expected_chunks ??
+            (latest.size ? Math.max(...latest.keys()) + 1 : 0);
+          const response = await fetch(`/api/live/${capture.jobId}/stop`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              expected_chunks: expected,
+              duration: capture.duration,
+            }),
+            signal: AbortSignal.timeout(20000),
+          });
+          if (!response.ok)
+            throw new Error(
+              "Servidor indisponível. Os trechos continuam preservados neste navegador.",
+            );
+          const retried = await fetch(`/api/live/${capture.jobId}/retry`, {
+            method: "POST",
+            signal: AbortSignal.timeout(20000),
+          });
+          if (!retried.ok)
+            throw new Error(
+              "O áudio foi enviado, mas o processamento aguarda nova tentativa.",
+            );
+        }
+      });
     uploads.current = attempt.catch(() => undefined);
     try {
       await attempt;
@@ -370,7 +399,9 @@ export function LiveStudio() {
   const needsRetry = pending > 0;
   useEffect(() => {
     if (!capture || completed) return;
-    const retry = () => { if (navigator.onLine) void recover(); };
+    const retry = () => {
+      if (navigator.onLine) void recover();
+    };
     window.addEventListener("online", retry);
     const timer = needsRetry ? window.setInterval(retry, 15000) : undefined;
     return () => {
@@ -381,17 +412,14 @@ export function LiveStudio() {
 
   if (pathname.startsWith("/shared/")) return null;
   const controls = (
-    <section
-      className="capture-panel space-y-5"
-      aria-label="Live Studio"
-    >
+    <section className="capture-panel space-y-5" aria-label="Live Studio">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="capture-symbol">
             <Icon name="mic" />
           </span>
           <div>
-            <h2 className="ingest-heading">Live Studio</h2>
+            <h2 className="ingest-heading">Gravar áudio</h2>
             <p className="mt-1 text-xs text-text-muted">
               {recording
                 ? "Capturando e transcrevendo"
@@ -399,7 +427,7 @@ export function LiveStudio() {
                   ? "Gravação consolidada"
                   : capture
                     ? "Captura preservada · recuperação disponível"
-                    : "Uma conversa começa aqui."}
+                    : "Pronto para gravar"}
             </p>
           </div>
         </div>
@@ -414,86 +442,111 @@ export function LiveStudio() {
           <input
             aria-label="Título da captura"
             className="field w-full"
-            placeholder="Dê um nome à conversa…"
+            placeholder="Título da gravação"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
-          <CaptureSources source={source} onChange={setSource} disabled={busy} />
+          <CaptureSources
+            source={source}
+            onChange={setSource}
+            disabled={busy}
+          />
           {(source === "system" || source === "mixed") && (
             <p className="rounded-lg border border-accent/25 bg-accent/5 p-3 text-xs leading-relaxed text-text-secondary">
-              No Chrome ou Edge, selecione a tela ou aba e marque <strong>Compartilhar áudio</strong>.
-              {" "}Somente o áudio é gravado; o vídeo da tela não é salvo.
-            </p>
-          )}
-        </div>
-      )}
-      {!capture && source !== "system" && (
-        <div className="flex flex-wrap items-center gap-3">
-          <select
-            className="field w-auto max-w-full"
-            aria-label="Dispositivo de áudio"
-            value={device}
-            onChange={(e) => setDevice(e.target.value)}
-          >
-            <option value="">Dispositivo padrão</option>
-            {devices.map((d) => (
-              <option key={d.deviceId} value={d.deviceId}>
-                {d.label || "Entrada de áudio"}
-              </option>
-            ))}
-          </select>
-          <Button
-            size="sm"
-            onClick={async () => {
-              try {
-                const permission = await navigator.mediaDevices.getUserMedia({
-                  audio: true,
-                });
-                permission.getTracks().forEach((t) => t.stop());
-                setDevices(
-                  (await navigator.mediaDevices.enumerateDevices()).filter(
-                    (d) => d.kind === "audioinput",
-                  ),
-                );
-              } catch {
-                setError(
-                  "Permita o microfone para listar os dispositivos disponíveis.",
-                );
-              }
-            }}
-          >
-            Listar entradas
-          </Button>
-          {source === "obs" && (
-            <p className="text-xs leading-relaxed text-text-muted">
-              No OBS, encaminhe a monitoração para um cabo de áudio virtual e
-              selecione essa entrada.
+              No Chrome ou Edge, selecione a tela ou aba e marque{" "}
+              <strong>Compartilhar áudio</strong>. Somente o áudio é gravado; o
+              vídeo da tela não é salvo.
             </p>
           )}
         </div>
       )}
       {!capture && (
-        <label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-text-secondary">
-          <input type="checkbox" className="mt-1 h-6 w-6 shrink-0 accent-accent"
-            checked={keepAwake} onChange={(event) => setKeepAwake(event.target.checked)} />
-          Manter a tela ativa durante a gravação, quando permitido pelo navegador
-        </label>
+        <details className="hub-disclosure" open={source === "obs"}>
+          <summary>Dispositivo e opções de captura</summary>
+          <div className="space-y-4 pt-4">
+            {!capture && source !== "system" && (
+              <div className="flex flex-wrap items-center gap-3">
+                <select
+                  className="field w-auto max-w-full"
+                  aria-label="Dispositivo de áudio"
+                  value={device}
+                  onChange={(e) => setDevice(e.target.value)}
+                >
+                  <option value="">Dispositivo padrão</option>
+                  {devices.map((d) => (
+                    <option key={d.deviceId} value={d.deviceId}>
+                      {d.label || "Entrada de áudio"}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const permission =
+                        await navigator.mediaDevices.getUserMedia({
+                          audio: true,
+                        });
+                      permission.getTracks().forEach((t) => t.stop());
+                      setDevices(
+                        (
+                          await navigator.mediaDevices.enumerateDevices()
+                        ).filter((d) => d.kind === "audioinput"),
+                      );
+                    } catch {
+                      setError(
+                        "Permita o microfone para listar os dispositivos disponíveis.",
+                      );
+                    }
+                  }}
+                >
+                  Listar entradas
+                </Button>
+                {source === "obs" && (
+                  <p className="text-xs leading-relaxed text-text-muted">
+                    No OBS, encaminhe a monitoração para um cabo de áudio
+                    virtual e selecione essa entrada.
+                  </p>
+                )}
+              </div>
+            )}
+            {!capture && (
+              <label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-text-secondary">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-6 w-6 shrink-0 accent-accent"
+                  checked={keepAwake}
+                  onChange={(event) => setKeepAwake(event.target.checked)}
+                />
+                Manter a tela ativa durante a gravação, quando permitido pelo
+                navegador
+              </label>
+            )}
+          </div>
+        </details>
       )}
       {!capture && (
-        <Button disabled={busy || !settings} variant="primary" onClick={start} className="w-full">
+        <Button
+          disabled={busy || !settings}
+          variant="primary"
+          onClick={start}
+          className="w-full"
+        >
           <Icon name="mic" />
           {busy ? "Preparando…" : "Iniciar captura"}
         </Button>
       )}
       {!completed && (
         <p className="text-xs leading-relaxed text-text-muted">
-          Pode minimizar ou trocar de aba. Mantenha esta aba aberta e o computador ligado durante a captura.
-          {" "}O Whisper processa os trechos em segundo plano.
+          Mantenha esta aba aberta durante a captura. Para fechar o navegador,
+          use o modo Windows.
         </p>
       )}
       {recording && (
         <div className="flex flex-wrap items-center gap-4">
-          <span className={`text-xs ${interrupted ? "text-warning" : "text-success"}`}>
+          <span
+            className={`text-xs ${interrupted ? "text-warning" : "text-success"}`}
+          >
             {interrupted ? "Áudio suspenso" : "● Gravando"}
           </span>
           <div
@@ -515,16 +568,35 @@ export function LiveStudio() {
         </div>
       )}
       {recording && interrupted && (
-        <div role="alert" className="space-y-3 text-xs leading-relaxed text-warning">
-          <p>O navegador suspendeu a entrada de áudio. Retome para continuar a gravação.</p>
-          <Button size="sm" onClick={() => { void engine.current?.resume().catch(() => setError("Não foi possível retomar o áudio. Verifique a fonte selecionada.")); }}>
+        <div
+          role="alert"
+          className="space-y-3 text-xs leading-relaxed text-warning"
+        >
+          <p>
+            O navegador suspendeu a entrada de áudio. Retome para continuar a
+            gravação.
+          </p>
+          <Button
+            size="sm"
+            onClick={() => {
+              void engine.current
+                ?.resume()
+                .catch(() =>
+                  setError(
+                    "Não foi possível retomar o áudio. Verifique a fonte selecionada.",
+                  ),
+                );
+            }}
+          >
             Retomar áudio
           </Button>
         </div>
       )}
       {recording && keepAwake && (
         <p className="text-xs leading-relaxed text-text-muted" role="status">
-          {wakeState === "active" ? "Tela ativa durante a captura." : "Proteção de tela indisponível nesta aba. Evite suspender o computador nas configurações do Windows."}
+          {wakeState === "active"
+            ? "Tela ativa durante a captura."
+            : "Proteção de tela indisponível nesta aba. Evite suspender o computador nas configurações do Windows."}
         </p>
       )}
       {capture && (
@@ -569,19 +641,46 @@ export function LiveStudio() {
     </section>
   );
   const modePicker = !capture && (
-    <div className="flex flex-wrap gap-2" role="group" aria-label="Modo de gravação">
-      {([["browser", "No navegador"], ["windows", "Windows · segundo plano"]] as const).map(([value, label]) => (
-        <Button key={value} size="sm" variant={mode === value ? "primary" : "secondary"}
-          aria-pressed={mode === value} disabled={busy || nativeActive || nativeBusy}
+    <div
+      className="flex flex-wrap gap-2"
+      role="group"
+      aria-label="Modo de gravação"
+    >
+      {(
+        [
+          ["browser", "No navegador"],
+          ["windows", "Windows · segundo plano"],
+        ] as const
+      ).map(([value, label]) => (
+        <Button
+          key={value}
+          size="sm"
+          variant={mode === value ? "primary" : "secondary"}
+          aria-pressed={mode === value}
+          disabled={busy || nativeActive || nativeBusy}
           onClick={() => {
             setMode(value);
-            try { localStorage.setItem("audiowhisper-capture-mode", value); } catch { /* Optional preference. */ }
-          }}>{label}</Button>
+            try {
+              localStorage.setItem("audiowhisper-capture-mode", value);
+            } catch {
+              /* Optional preference. */
+            }
+          }}
+        >
+          {label}
+        </Button>
       ))}
     </div>
   );
-  const content = mode === "windows" && !capture
-    ? <WindowsCapture onRecordingChange={setNativeActive} onBusyChange={setNativeBusy} /> : controls;
+  const content =
+    mode === "windows" && !capture ? (
+      <WindowsCapture
+        onRecordingChange={setNativeActive}
+        onBusyChange={setNativeBusy}
+      />
+    ) : (
+      controls
+    );
   if (slot)
     return createPortal(
       <div className="space-y-5">

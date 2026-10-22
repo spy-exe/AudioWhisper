@@ -54,7 +54,7 @@ export function CommandPalette() {
       <WorkspaceDialog
         open={open}
         onClose={() => setOpen(false)}
-        title="Aonde vamos?"
+        title="Ir para"
         initialFocus={input}
       >
         <div className="hub-search">

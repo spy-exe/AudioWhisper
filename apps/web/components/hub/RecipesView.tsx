@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import {
   HubPage,
-  HubPanel,
+  HubDisclosure,
   MutationFeedback,
   Pagination,
   ProjectField,
@@ -66,53 +66,56 @@ function RecipeCard({
       <h3>{recipe.name}</h3>
       <p>
         {documentKinds[recipe.kind as keyof typeof documentKinds]} ·{" "}
-        {recipe.model}
+        {recipe.automatic ? "Automático" : "Manual"}
       </p>
-      {recipe.instruction && <blockquote>{recipe.instruction}</blockquote>}
-      <div className="recipe-switches">
-        <label className="hub-check">
-          <input
-            type="checkbox"
-            checked={recipe.enabled}
-            disabled={mutation.busy}
-            onChange={async (e) => {
-              const enabled = e.target.checked;
-              if (
-                await mutation.execute(
-                  () => workspaceApi.editRecipe(recipe, { enabled }),
-                  enabled ? "Receita habilitada." : "Receita pausada.",
+
+      <details className="hub-disclosure">
+        <summary>Automação e estado</summary>
+        <div className="recipe-switches">
+          <label className="hub-check">
+            <input
+              type="checkbox"
+              checked={recipe.enabled}
+              disabled={mutation.busy}
+              onChange={async (e) => {
+                const enabled = e.target.checked;
+                if (
+                  await mutation.execute(
+                    () => workspaceApi.editRecipe(recipe, { enabled }),
+                    enabled ? "Modelo habilitado." : "Modelo pausado.",
+                  )
                 )
-              )
-                refresh();
-            }}
-          />
-          Receita habilitada
-        </label>
-        <label className="hub-check">
-          <input
-            type="checkbox"
-            checked={recipe.automatic}
-            disabled={mutation.busy}
-            onChange={async (e) => {
-              const automatic = e.target.checked;
-              if (
-                await mutation.execute(
-                  () => workspaceApi.editRecipe(recipe, { automatic }),
-                  automatic
-                    ? "Geração automática ativada para novas conclusões."
-                    : "Geração automática desativada.",
+                  refresh();
+              }}
+            />
+            Modelo habilitado
+          </label>
+          <label className="hub-check">
+            <input
+              type="checkbox"
+              checked={recipe.automatic}
+              disabled={mutation.busy}
+              onChange={async (e) => {
+                const automatic = e.target.checked;
+                if (
+                  await mutation.execute(
+                    () => workspaceApi.editRecipe(recipe, { automatic }),
+                    automatic
+                      ? "Geração automática ativada para novas conclusões."
+                      : "Geração automática desativada.",
+                  )
                 )
-              )
-                refresh();
-            }}
-          />
-          Preparar ao concluir gravação
-        </label>
-      </div>
-      <p className="hub-field-hint">
-        Execuções criam rascunhos. A revisão e o compartilhamento continuam nas
-        suas mãos.
-      </p>
+                  refresh();
+              }}
+            />
+            Preparar ao concluir gravação
+          </label>
+        </div>
+        <p className="hub-field-hint">
+          Execuções criam rascunhos. A revisão e o compartilhamento continuam
+          nas suas mãos.
+        </p>
+      </details>
       <Button
         disabled={!recipe.enabled || mutation.busy}
         onClick={() => setChoosing(!choosing)}
@@ -158,7 +161,7 @@ function RecipeCard({
             if (
               await mutation.execute(
                 () => workspaceApi.editRecipe(recipe, { name, instruction }),
-                "Receita salva. Novas execuções usam as instruções atualizadas.",
+                "Modelo salvo. Novas execuções usam as instruções atualizadas.",
               )
             )
               refresh();
@@ -285,16 +288,15 @@ export function RecipesView() {
     : (models.data?.models[0] ?? "");
   return (
     <HubPage
-      eyebrow="DÊ FORMA À SUA ROTINA"
-      title="Receitas de trabalho"
-      description="Salve o seu jeito de transformar reuniões em documentos. Execute quando precisar ou prepare rascunhos após cada nova gravação."
+      title="Modelos de documento"
+      description="Salve instruções para preparar atas, resumos e planos de ação."
     >
-      <div className="hub-split">
+      <div className="hub-collection-layout">
         <div className="min-w-0">
           <ProjectField
             value={project}
             onChange={(value) => filters.change("project", value)}
-            label="Filtrar receitas por projeto"
+            label="Filtrar por projeto"
           />
           <ResourceState
             {...recipes}
@@ -302,8 +304,8 @@ export function RecipesView() {
             empty={
               recipes.data?.items.length === 0
                 ? {
-                    title: "Seu jeito de trabalhar, pronto para repetir",
-                    text: "Crie uma receita com o tipo de documento, contexto e instruções que você costuma usar.",
+                    title: "Nenhum modelo cadastrado",
+                    text: "Crie um modelo e escolha uma gravação para preparar o documento.",
                   }
                 : undefined
             }
@@ -324,7 +326,7 @@ export function RecipesView() {
             />
           </ResourceState>
         </div>
-        <HubPanel title="Criar uma receita" label="UM MODELO PARA A SUA ROTINA">
+        <HubDisclosure title="Novo modelo de documento">
           <form
             noValidate
             className="hub-form"
@@ -341,7 +343,7 @@ export function RecipesView() {
                       instruction,
                       automatic,
                     }),
-                  "Receita salva.",
+                  "Modelo salvo.",
                 )
               ) {
                 setName("");
@@ -353,7 +355,7 @@ export function RecipesView() {
           >
             <DraftGuard dirty={!!(name || instruction)} />
             <label className="hub-label">
-              Nome da receita
+              Nome do modelo
               <input
                 className="field"
                 value={name}
@@ -379,14 +381,19 @@ export function RecipesView() {
             <ProjectField
               value={recipeProject}
               onChange={setRecipeProject}
-              label="Contexto da receita"
+              label="Projeto do modelo"
               allLabel="Todas as gravações"
             />
-            <LocalModelField
-              resource={models}
-              value={effectiveModel}
-              onChange={setModel}
-            />
+            <details className="hub-disclosure">
+              <summary>Modelo de processamento</summary>
+              <div className="pt-4">
+                <LocalModelField
+                  resource={models}
+                  value={effectiveModel}
+                  onChange={setModel}
+                />
+              </div>
+            </details>
             <label className="hub-label">
               Instruções adicionais
               <textarea
@@ -416,11 +423,19 @@ export function RecipesView() {
               variant="primary"
               disabled={mutation.busy || !name.trim() || !effectiveModel}
             >
-              Salvar receita
+              Salvar modelo
             </Button>
+            {!models.loading && !effectiveModel && (
+              <p role="alert" className="text-warning">
+                {models.error ||
+                  models.data?.error ||
+                  "Nenhum modelo de processamento disponível."}{" "}
+                Abra “Modelo de processamento” para verificar a conexão.
+              </p>
+            )}
             <MutationFeedback {...mutation} />
           </form>
-        </HubPanel>
+        </HubDisclosure>
       </div>
       <div className="hub-results-heading">
         <h2>Execuções e documentos</h2>
@@ -432,8 +447,8 @@ export function RecipesView() {
         empty={
           runs.data?.items.length === 0
             ? {
-                title: "Tudo pronto para a primeira execução",
-                text: "Escolha uma gravação em uma receita ou aguarde a próxima conclusão com geração automática habilitada.",
+                title: "Nenhum documento preparado",
+                text: "Escolha uma gravação em um modelo cadastrado para começar.",
               }
             : undefined
         }

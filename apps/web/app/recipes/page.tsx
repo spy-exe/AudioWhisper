@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { RecipesView } from "@/components/hub/RecipesView";
-export const metadata = { title: "Receitas — AudioWhisper" };
+export const metadata = { title: "Modelos de documento · AudioWhisper" };
 export default function Page() {
   return (
     <Suspense

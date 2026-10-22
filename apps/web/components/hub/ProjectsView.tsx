@@ -17,6 +17,7 @@ import { Icon } from "@/components/ui/Icon";
 import {
   HubPage,
   HubPanel,
+  HubDisclosure,
   MutationFeedback,
   Pagination,
   QuerySearch,
@@ -69,11 +70,10 @@ export function ProjectsView() {
     [color, setColor] = useState<Project["color"]>("blue");
   return (
     <HubPage
-      eyebrow="MEMÓRIA COM CONTEXTO"
       title="Projetos"
-      description="Uma conversa ganha valor quando faz parte de uma história. Reúna gravações, pessoas e próximos passos no mesmo lugar."
+      description="Organize gravações e tarefas por projeto."
     >
-      <div className="hub-split">
+      <div className="hub-collection-layout">
         <div className="min-w-0">
           <QuerySearch
             current={q}
@@ -87,7 +87,7 @@ export function ProjectsView() {
             empty={
               resource.data?.items.length === 0
                 ? {
-                    title: "Seu próximo projeto começa aqui",
+                    title: "Nenhum projeto encontrado",
                     text: "Crie um projeto e escolha-o em “Organizar conversa” no editor. Os projetos que você já usa aparecem automaticamente.",
                   }
                 : undefined
@@ -107,10 +107,7 @@ export function ProjectsView() {
                     <Icon name="arrow" />
                   </div>
                   <h2>{project.name}</h2>
-                  <p>
-                    {project.description ||
-                      "Conversas, contexto e próximos passos deste projeto."}
-                  </p>
+                  {project.description && <p>{project.description}</p>}
                   <footer>
                     <span>
                       <strong>{project.recording_count}</strong> gravações
@@ -131,7 +128,7 @@ export function ProjectsView() {
             change={(value) => filters.change("offset", value)}
           />
         </div>
-        <HubPanel title="Novo projeto" label="DAR UM LUGAR ÀS IDEIAS">
+        <HubDisclosure title="Novo projeto">
           <form
             noValidate
             className="hub-form"
@@ -188,10 +185,10 @@ export function ProjectsView() {
                 value={color}
                 onChange={(e) => setColor(e.target.value as Project["color"])}
               >
-                <option value="blue">Azul · perspectiva</option>
-                <option value="amber">Âmbar · movimento</option>
-                <option value="violet">Violeta · ideias</option>
-                <option value="green">Verde · progresso</option>
+                <option value="blue">Azul</option>
+                <option value="amber">Âmbar</option>
+                <option value="violet">Violeta</option>
+                <option value="green">Verde</option>
               </select>
             </label>
             <Button
@@ -203,7 +200,7 @@ export function ProjectsView() {
             </Button>
             <MutationFeedback {...mutation} />
           </form>
-        </HubPanel>
+        </HubDisclosure>
       </div>
     </HubPage>
   );
@@ -287,11 +284,9 @@ export function ProjectDetailView({ name }: { name: string }) {
     suffix = `?project=${encodeURIComponent(name)}`;
   return (
     <HubPage
-      eyebrow="PROJETO EM FOCO"
       title={name}
       description={
-        project?.description ||
-        "Gravações, participantes e próximos passos conectados."
+        project?.description || "Gravações e participantes deste projeto."
       }
       action={
         <Link href="/projects" className="hub-text-link">
@@ -308,7 +303,7 @@ export function ProjectDetailView({ name }: { name: string }) {
               conectadas
             </span>
             <span>
-              {formatDuration(project?.duration_seconds ?? 0)} de memória do
+              {formatDuration(project?.duration_seconds ?? 0)} de áudio do
               projeto
             </span>
           </div>
@@ -317,8 +312,8 @@ export function ProjectDetailView({ name }: { name: string }) {
               ["/search", "search", "Buscar trechos"],
               ["/tasks", "tasks", "Acompanhar tarefas"],
               ["/notebook", "bookmark", "Abrir caderno"],
-              ["/knowledge", "sparkle", "Perguntar às reuniões"],
-              ["/recipes", "workflow", "Receitas do projeto"],
+              ["/knowledge", "search", "Consultar gravações"],
+              ["/recipes", "workflow", "Modelos do projeto"],
             ].map(([href, icon, label]) => (
               <Link key={href} href={href + suffix}>
                 <Icon name={icon as "search"} />
@@ -329,10 +324,7 @@ export function ProjectDetailView({ name }: { name: string }) {
           </nav>
         </div>
         <div className="hub-split">
-          <HubPanel
-            title="Conversas deste projeto"
-            label="DO PRIMEIRO ÁUDIO AO PRÓXIMO PASSO"
-          >
+          <HubPanel title="Gravações do projeto">
             {project?.recordings.items.length ? (
               <RecordingList page={project.recordings} />
             ) : (
@@ -351,7 +343,7 @@ export function ProjectDetailView({ name }: { name: string }) {
               change={(value) => filters.change("offset", value)}
             />
           </HubPanel>
-          <HubPanel title="Pessoas e contexto">
+          <HubPanel title="Participantes">
             <ul className="participant-list">
               {project?.participants.map((person, i) => (
                 <li key={person}>

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { NotebookView } from "@/components/hub/NotebookView";
-export const metadata = { title: "Caderno — AudioWhisper" };
+export const metadata = { title: "Caderno · AudioWhisper" };
 export default function Page() {
   return (
     <Suspense

@@ -7,8 +7,6 @@ import { Icon } from "./Icon";
 import { CommandPalette } from "./CommandPalette";
 import { WorkspaceDialog } from "./WorkspaceDialog";
 
-import { GpuStatusBadge } from "@/components/jobs/GpuStatusBadge";
-
 export function TopBar() {
   const pathname = usePathname();
   const [more, setMore] = useState(false);
@@ -37,7 +35,7 @@ export function TopBar() {
           <Link
             href="/"
             className="brand-link"
-            aria-label="AudioWhisper 2.0 — Studio"
+            aria-label="AudioWhisper, Studio"
           >
             <span className="brand-mark">
               <Icon name="studio" />
@@ -52,16 +50,10 @@ export function TopBar() {
               <Icon name="shield" className="size-4 text-success" />{" "}
               Processamento local
             </span>
-            <div className="header-gpu">
-              <GpuStatusBadge />
-            </div>
           </div>
         </div>
       </header>
       <nav className="app-sidebar" aria-label="Navegação principal">
-        <p className="mb-3 hidden px-3 text-xs font-semibold uppercase tracking-[.18em] text-text-muted lg:block">
-          SEU WORKSPACE
-        </p>
         <Link href="/#live-capture-slot" className="nav-create">
           <Icon name="mic" /> Nova gravação <span aria-hidden="true">+</span>
         </Link>
@@ -107,16 +99,11 @@ export function TopBar() {
             <span>Mais</span>
           </button>
         </div>
-        <div className="sidebar-note">
-          <Icon name="shield" className="mb-3 size-6 text-success" />
-          <p>Seu áudio fica com você.</p>
-          <span>Inteligência local, do primeiro segundo ao próximo passo.</span>
-        </div>
       </nav>
       <WorkspaceDialog
         open={more}
         onClose={() => setMore(false)}
-        title="Seu workspace"
+        title="Navegação"
       >
         <nav className="command-options" aria-label="Todas as ferramentas">
           {workspaceNavigation.map((item) => (

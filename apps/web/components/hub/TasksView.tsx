@@ -16,7 +16,8 @@ import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import {
   HubPage,
-  HubPanel,
+  FilterDisclosure,
+  HubDisclosure,
   MutationFeedback,
   Pagination,
   ProjectField,
@@ -148,13 +149,15 @@ export function TaskCard({
     <article className={`task-card priority-${task.priority}`}>
       <div className="task-card-meta">
         <span>{task.project || "Pessoal"}</span>
-        <span>
-          {task.priority === "high"
-            ? "Prioridade alta"
-            : task.priority === "low"
-              ? "Prioridade baixa"
-              : "Prioridade normal"}
-        </span>
+        {task.priority !== "normal" && (
+          <span>
+            {task.priority === "high"
+              ? "Prioridade alta"
+              : task.priority === "low"
+                ? "Prioridade baixa"
+                : "Prioridade normal"}
+          </span>
+        )}
       </div>
       <h3>{task.title}</h3>
       {task.description && task.description !== task.title && (
@@ -162,7 +165,7 @@ export function TaskCard({
       )}
       <div className="task-owner">
         <span className="participant-avatar tint-blue">
-          {task.assignee ? Array.from(task.assignee)[0] : "—"}
+          {task.assignee ? Array.from(task.assignee)[0] : "?"}
         </span>
         <span>{task.assignee || "Responsável não definido"}</span>
       </div>
@@ -266,11 +269,10 @@ export function TasksView() {
   }, [project]);
   return (
     <HubPage
-      eyebrow="DA CONVERSA À ENTREGA"
-      title="Próximos passos"
-      description="Dê continuidade ao que foi discutido. Tarefas com contexto, responsáveis e uma trilha até a conversa original."
+      title="Tarefas"
+      description="Acompanhe responsáveis, prazos e andamento."
     >
-      <HubPanel title="Uma ação de cada vez" label="ADICIONAR AO SEU PLANO">
+      <HubDisclosure title="Nova tarefa">
         <form
           noValidate
           className="hub-form"
@@ -375,13 +377,13 @@ export function TasksView() {
           </details>
           <MutationFeedback {...mutation} />
         </form>
-      </HubPanel>
+      </HubDisclosure>
       <div className="hub-toolbar">
         <QuerySearch
           current={filters.params.get("q") ?? ""}
           commit={(value) => filters.change("q", value)}
           label="Buscar tarefas"
-          placeholder="Buscar no plano de ação"
+          placeholder="Buscar tarefas"
         />
         <div className="hub-segmented" aria-label="Visualização das tarefas">
           <button
@@ -398,53 +400,59 @@ export function TasksView() {
           </button>
         </div>
       </div>
-      <div className="hub-filter-row">
-        <ProjectField
-          value={project}
-          onChange={(value) => filters.change("project", value)}
-          label="Filtrar projeto"
-        />
-        <label className="hub-label">
-          Filtrar estado
-          <select
-            className="field"
-            value={status}
-            onChange={(e) => filters.change("status", e.target.value)}
-          >
-            <option value="all">Todos os estados</option>
-            {Object.entries(statuses).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="hub-check">
-          <input
-            type="checkbox"
-            checked={archived}
-            onChange={(e) =>
-              filters.change("archived", String(e.target.checked))
-            }
+      <FilterDisclosure
+        count={[project, status !== "all", archived].filter(Boolean).length}
+      >
+        <div className="hub-filter-row">
+          <ProjectField
+            value={project}
+            onChange={(value) => filters.change("project", value)}
+            label="Filtrar projeto"
           />
-          Arquivadas
-        </label>
-      </div>
+          <label className="hub-label">
+            Filtrar estado
+            <select
+              className="field"
+              value={status}
+              onChange={(e) => filters.change("status", e.target.value)}
+            >
+              <option value="all">Todos os estados</option>
+              {Object.entries(statuses).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="hub-check">
+            <input
+              type="checkbox"
+              checked={archived}
+              onChange={(e) =>
+                filters.change("archived", String(e.target.checked))
+              }
+            />
+            Arquivadas
+          </label>
+        </div>
+      </FilterDisclosure>
       <ResourceState
         {...resource}
         retry={resource.refresh}
         empty={
           resource.data?.items.length === 0
             ? {
-                title: "Um próximo passo faz a diferença",
+                title: "Nenhuma tarefa encontrada",
                 text: "Adicione uma tarefa aqui ou importe ações depois de revisar um documento no editor da reunião.",
               }
             : undefined
         }
       >
         <p className="hub-field-hint">
-          {resource.data?.total ?? 0} tarefas encontradas · as colunas mostram
-          esta página.
+          {resource.data && resource.data.total > resource.data.items.length
+            ? `${resource.data.items.length} de `
+            : ""}
+          {resource.data?.total ?? 0} tarefas
         </p>
         {mode === "board" ? (
           <div

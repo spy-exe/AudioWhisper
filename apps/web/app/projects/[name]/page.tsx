@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { ProjectDetailView } from "@/components/hub/ProjectsView";
-export const metadata = { title: "Projeto — AudioWhisper" };
+export const metadata = { title: "Projeto · AudioWhisper" };
 export default async function Page({
   params,
 }: {

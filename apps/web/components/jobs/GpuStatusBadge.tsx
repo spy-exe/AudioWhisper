@@ -36,7 +36,7 @@ export function GpuStatusBadge() {
   }, []);
 
   if (!diagnostics) {
-    return <Badge tone="neutral">GPU — verificando…</Badge>;
+    return <Badge tone="neutral">GPU · verificando…</Badge>;
   }
 
   if (!diagnostics.gpu_available) {

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { ProjectsView } from "@/components/hub/ProjectsView";
-export const metadata = { title: "Projetos — AudioWhisper" };
+export const metadata = { title: "Projetos · AudioWhisper" };
 export default function Page() {
   return (
     <Suspense
