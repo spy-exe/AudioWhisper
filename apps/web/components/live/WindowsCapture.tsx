@@ -19,6 +19,7 @@ export function WindowsCapture({ onRecordingChange, onBusyChange }: { onRecordin
   const [error, setError] = useState("");
   const [transportError, setTransportError] = useState("");
   const commanding = useRef(false);
+  const statusEpoch = useRef(0);
   const [source, setSource] = useState("mixed");
   const [title, setTitle] = useState("");
   const [microphone, setMicrophone] = useState("");
@@ -48,9 +49,10 @@ export function WindowsCapture({ onRecordingChange, onBusyChange }: { onRecordin
     let active = true;
     let timer: ReturnType<typeof setTimeout>;
     const poll = async () => {
+      const epoch = statusEpoch.current;
       try {
         const next = await windowsCapture<WindowsCaptureStatus>("/status");
-        if (active && !commanding.current) { setStatus(next); setTransportError(""); }
+        if (active && !commanding.current && epoch === statusEpoch.current) { setStatus(next); setTransportError(""); }
       } catch {
         if (active) setTransportError("Conexão com o capturador perdida. A gravação pode continuar no Windows. Reconectando automaticamente…");
       } finally { if (active) timer = setTimeout(poll, 2000); }
@@ -62,6 +64,7 @@ export function WindowsCapture({ onRecordingChange, onBusyChange }: { onRecordin
   const command = async (stop: boolean) => {
     if (commanding.current) return;
     commanding.current = true;
+    statusEpoch.current += 1;
     setBusy(true);
     setError("");
     try {
@@ -74,7 +77,7 @@ export function WindowsCapture({ onRecordingChange, onBusyChange }: { onRecordin
       setStatus(next);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Não foi possível controlar o capturador. Verifique o ícone na bandeja do Windows.");
-    } finally { commanding.current = false; setBusy(false); }
+    } finally { statusEpoch.current += 1; commanding.current = false; setBusy(false); }
   };
 
   return (

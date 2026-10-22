@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { WindowsCapture } from "@/components/live/WindowsCapture";
 import { windowsCapture } from "@/lib/windows-capture";
@@ -8,10 +8,16 @@ vi.mock("@/contexts/SettingsContext", () => ({ useSettings: () => ({ settings: {
 vi.mock("@/hooks/useJobProgress", () => ({ useJobProgress: () => ({ job: null, newSegments: [], provisionalSegments: [] }) }));
 const idle = { version: "1", recording: false, level: 0, sleep_protected: false, pending_total: 0, recovery_errors: 0 };
 const inputs = { outputs: [{ id: "5", name: "Alto-falante de teste" }], microphones: [{ id: "2", name: "Microfone de teste" }] };
-afterEach(() => vi.resetAllMocks());
+afterEach(() => { vi.resetAllMocks(); vi.useRealTimers(); });
 
 it("uses the selected Windows output and starts recording independently of the browser", async () => {
-  vi.mocked(windowsCapture).mockImplementation(async (path) => path === "/devices" ? inputs : path === "/start" ? { ...idle, recording: true, job_id: "windows-job", sleep_protected: true } : idle);
+  let recording = false;
+  vi.mocked(windowsCapture).mockImplementation(async (path) => {
+    if (path === "/devices") return inputs;
+    if (path === "/start") recording = true;
+    if (path === "/stop") recording = false;
+    return recording ? { ...idle, recording: true, job_id: "windows-job", sleep_protected: true } : idle;
+  });
   const active = vi.fn();
   const busy = vi.fn();
   const { unmount } = render(<WindowsCapture onRecordingChange={active} onBusyChange={busy} />);
@@ -66,4 +72,23 @@ it("retains a failed operation message and does not pretend recording started", 
   expect(await screen.findByRole("alert")).toHaveTextContent("Entrada indisponível");
   expect(screen.queryByRole("button", { name: "Encerrar no Windows" })).not.toBeInTheDocument();
   unmount();
+});
+
+it("ignores a status response requested before the start command", async () => {
+  vi.useFakeTimers();
+  let statusCalls = 0, resolvePoll!: (value: typeof idle) => void;
+  const delayed = new Promise<typeof idle>(resolve => { resolvePoll = resolve; });
+  vi.mocked(windowsCapture).mockImplementation(async path => {
+    if (path === "/devices") return inputs;
+    if (path === "/start") return { ...idle, recording: true, job_id: "started-job" };
+    return ++statusCalls === 1 ? idle : delayed;
+  });
+  const active = vi.fn();
+  await act(async () => { render(<WindowsCapture onRecordingChange={active} />); });
+  await act(async () => { vi.advanceTimersByTime(2000); });
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Iniciar no Windows" })); });
+  expect(screen.getByRole("button", { name: "Encerrar no Windows" })).toBeVisible();
+  await act(async () => resolvePoll(idle));
+  expect(screen.getByRole("button", { name: "Encerrar no Windows" })).toBeVisible();
+  expect(active).toHaveBeenLastCalledWith(true);
 });
