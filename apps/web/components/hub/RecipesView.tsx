@@ -1,7 +1,7 @@
 "use client";
 import { DraftGuard } from "@/components/ui/WorkspaceDialog";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useWorkspaceMutation,
   useWorkspaceResource,
@@ -277,6 +277,9 @@ export function RecipesView() {
     [instruction, setInstruction] = useState(""),
     [recipeProject, setRecipeProject] = useState(project),
     [automatic, setAutomatic] = useState(false);
+  useEffect(() => {
+    setRecipeProject(project);
+  }, [project]);
   const effectiveModel = models.data?.models.includes(model)
     ? model
     : (models.data?.models[0] ?? "");

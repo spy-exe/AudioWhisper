@@ -1,6 +1,6 @@
 "use client";
 import { DraftGuard } from "@/components/ui/WorkspaceDialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useWorkspaceMutation,
   useWorkspaceResource,
@@ -261,6 +261,9 @@ export function TasksView() {
     [taskProject, setTaskProject] = useState(project),
     [priority, setPriority] = useState<Task["priority"]>("normal"),
     [mode, setMode] = useState<"board" | "list">("board");
+  useEffect(() => {
+    setTaskProject(project);
+  }, [project]);
   return (
     <HubPage
       eyebrow="DA CONVERSA À ENTREGA"

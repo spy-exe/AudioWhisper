@@ -335,7 +335,9 @@ it("distinguishes no evidence from a failed question and exposes retry", async (
     await screen.findByText(/Informação não encontrada nos trechos/),
   ).toBeVisible();
   expect(screen.getByText("Ollama indisponível")).toBeVisible();
-  expect(screen.getByRole("button", { name: "Copiar resposta" })).toBeDisabled();
+  expect(
+    screen.getByRole("button", { name: "Copiar resposta" }),
+  ).toBeDisabled();
   fireEvent.click(
     screen.getByRole("button", { name: "Tentar consulta novamente" }),
   );
@@ -463,3 +465,24 @@ it("connects each answer item to its own source and flags changed evidence", asy
   ).toHaveAttribute("href", "/jobs/j1?segment=s1&t=12");
   expect(screen.getByText(/Uma fonte foi alterada/)).toBeVisible();
 });
+
+it.each(["task", "recipe"])(
+  "keeps a %s draft while moving its default project to the newly selected context",
+  async (kind) => {
+    nav.params = new URLSearchParams("project=Infra");
+    const view = render(kind === "task" ? <TasksView /> : <RecipesView />);
+    const label = kind === "task" ? "Título da tarefa" : "Nome da receita";
+    const input = await screen.findByLabelText(label);
+    fireEvent.change(input, { target: { value: "Rascunho preservado" } });
+    if (kind === "task")
+      fireEvent.click(screen.getByText("Responsável, projeto e detalhes"));
+    nav.params = new URLSearchParams("project=Produto");
+    view.rerender(kind === "task" ? <TasksView /> : <RecipesView />);
+    expect(screen.getByLabelText(label)).toHaveValue("Rascunho preservado");
+    expect(
+      screen.getByLabelText(
+        kind === "task" ? "Projeto da tarefa" : "Contexto da receita",
+      ),
+    ).toHaveValue("Produto");
+  },
+);
