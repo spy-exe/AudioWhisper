@@ -49,6 +49,29 @@ class JobCancelled(Exception):
     pass
 
 
+def transcribe_options(job_settings: dict) -> dict:
+    """faster-whisper arguments shared by file and live transcription. Vocabulary hints only
+    bias recognition of words that were actually spoken; they are never inserted as text."""
+    options = {
+        "language": job_settings.get("language") or None,
+        "task": "translate" if job_settings.get("translate_to_english") else "transcribe",
+        "beam_size": job_settings.get("beam_size", 5),
+        "vad_filter": job_settings.get("vad_enabled", True),
+    }
+    if job_settings.get("initial_prompt"):
+        options["initial_prompt"] = job_settings["initial_prompt"]
+    if job_settings.get("hotwords"):
+        options["hotwords"] = job_settings["hotwords"]
+    return options
+
+
+def estimate_remaining(elapsed: float, processed_audio: float, total_audio: float) -> float | None:
+    """Remaining wall time from the measured throughput of this run; None until it is meaningful."""
+    if total_audio <= 0 or processed_audio <= 0 or elapsed < 1 or processed_audio >= total_audio:
+        return None
+    return round(elapsed / processed_audio * (total_audio - processed_audio), 1)
+
+
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -128,12 +151,9 @@ def process_transcription_job(job_id: str) -> None:
         duration = media.duration_seconds or 0.0
         segments_gen, info = loaded.model.transcribe(
             str(tmp_wav_path),
-            language=job_settings.get("language") or None,
-            task="translate" if job_settings.get("translate_to_english") else "transcribe",
-            beam_size=job_settings.get("beam_size", 5),
-            vad_filter=job_settings.get("vad_enabled", True),
             word_timestamps=job_settings.get("word_timestamps", True),
             temperature=job_settings.get("temperature", 0.0),
+            **transcribe_options(job_settings),
         )
         set_job(language_detected=info.language)
 
@@ -196,6 +216,7 @@ def process_transcription_job(job_id: str) -> None:
                     stage,
                     language_detected=info.language,
                     new_segments=pending_segments,
+                    eta_seconds=estimate_remaining(now - t_start, seg.end, duration),
                 )
                 pending_segments = []
                 last_publish = now
