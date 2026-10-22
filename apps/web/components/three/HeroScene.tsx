@@ -11,10 +11,10 @@ import { SpectralField } from "./SpectralField";
 const MAX_DPR = 1.75;
 
 /**
- * The single marquee Three.js moment in this app — a slow-orbiting ambient scene reserved for
+ * The single marquee Three.js moment in this app · a slow-orbiting ambient scene reserved for
  * the home page hero, where nothing else is competing for the GPU. Every other surface that
  * used to carry decorative 3D (upload feedback, live processing) now uses PixiJS instead,
- * which is dramatically cheaper and — because progress/drag state actually drives it — tied to
+ * which is dramatically cheaper and · because progress/drag state actually drives it · tied to
  * what the product is doing rather than being decoration for its own sake.
  */
 function OrbitRig({ children }: { children: React.ReactNode }) {

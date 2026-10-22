@@ -1,13 +1,14 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { DocumentView } from "@/components/workspace/DocumentView";
 import { SharePanel } from "@/components/workspace/SharePanel";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { workspaceApi } from "@/lib/workspace-api";
 import type { AIDocument, TranscriptSegment } from "@/lib/types";
 
-vi.mock("@/lib/api", () => ({ api: {
+vi.mock("@/lib/api", async (original) => ({ ...(await original<typeof import("@/lib/api")>()), api: {
   shares: vi.fn(), createShare: vi.fn(), revokeShare: vi.fn(), emailDocument: vi.fn(), reviewDocument: vi.fn(), documentDownloadUrl: vi.fn(() => "/download"),
+  deleteDocument: vi.fn(),
 } }));
 vi.mock("@/lib/workspace-api", () => ({ workspaceApi: { importActions: vi.fn() } }));
 const document: AIDocument = {
@@ -107,4 +108,21 @@ it("validates SMTP input and reuses the request id when delivery is uncertain", 
   fireEvent.click(screen.getByRole("button", { name: "Enviar e-mail revisado" }));
   await waitFor(() => expect(api.emailDocument).toHaveBeenCalledTimes(2));
   expect(vi.mocked(api.emailDocument).mock.calls[0]![3]).toBe(vi.mocked(api.emailDocument).mock.calls[1]![3]);
+});
+
+it("deletes a document only after confirmation and keeps it when the server refuses", async () => {
+  vi.mocked(api.deleteDocument)
+    .mockRejectedValueOnce(new ApiError(409, { error: { code: "HTTP_409", message: "Aguarde a geração terminar antes de excluir o documento.", details: {}, request_id: null } }))
+    .mockResolvedValue(undefined);
+  const { onChange } = renderDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Excluir" }));
+  const dialog = screen.getByRole("alertdialog", { name: "Excluir este documento?" });
+  expect(dialog).toHaveTextContent("todos os links privados");
+  fireEvent.click(within(dialog).getByRole("button", { name: "Excluir documento" }));
+  expect(await within(dialog).findByRole("alert")).toHaveTextContent("Aguarde a geração terminar");
+  expect(onChange).not.toHaveBeenCalled();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Excluir documento" }));
+  await waitFor(() => expect(onChange).toHaveBeenCalledOnce());
+  expect(api.deleteDocument).toHaveBeenCalledWith("document-1");
+  expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
 });

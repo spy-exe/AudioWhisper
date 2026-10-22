@@ -35,7 +35,10 @@ test("editing a segment shows the saving/saved indicator", async ({ page }) => {
   const textarea = page.locator("textarea").first();
   await textarea.fill("Texto editado pelo teste automatizado.");
   await textarea.blur();
-  await expect(page.getByText(/salvando|salvo/i)).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText(/^(Salvando…|Salvo)$/)).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText('Salvo', { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.locator('textarea').first()).toHaveValue('Texto editado pelo teste automatizado.');
 });
 
 test("Ctrl+F opens the search bar and finds a match", async ({ page }) => {
@@ -68,5 +71,6 @@ test("exporting SRT triggers a download", async ({ page }) => {
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "SRT" }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toContain("transcript");
+  // Named after the recording (speech.wav), not a generic "transcript.srt".
+  expect(download.suggestedFilename()).toBe("speech.srt");
 });

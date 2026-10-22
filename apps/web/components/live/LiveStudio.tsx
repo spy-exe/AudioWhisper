@@ -14,6 +14,7 @@ import {
   type StoredCapture,
   type StoredChunk,
 } from "@/lib/live-store";
+import { transcriptionSettingsFrom } from "@/lib/transcription-settings";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useJobProgress } from "@/hooks/useJobProgress";
 import { TranscriptFeed } from "@/components/jobs/TranscriptFeed";
@@ -256,12 +257,7 @@ export function LiveStudio() {
           title:
             title.trim() || `Captura ${new Date().toLocaleString("pt-BR")}`,
           source,
-          settings: {
-            model_name: settings?.default_model ?? "turbo",
-            device: settings?.transcription_device ?? "cuda",
-            compute_type: settings?.transcription_compute_type ?? "float16",
-            word_timestamps: true,
-          },
+          settings: transcriptionSettingsFrom(settings, { word_timestamps: true }),
         }),
         signal: AbortSignal.timeout(20000),
       });

@@ -17,7 +17,14 @@ export const TERMINAL_STATUSES: readonly JobStatus[] = [
 
 export type MediaType = "audio" | "video";
 export type ExportFormat =
-  "txt" | "markdown" | "json" | "srt" | "vtt" | "pdf" | "docx";
+  | "txt"
+  | "markdown"
+  | "json"
+  | "srt"
+  | "vtt"
+  | "pdf"
+  | "docx"
+  | "csv";
 
 export interface MediaFile {
   id: string;
@@ -44,6 +51,8 @@ export interface TranscriptionSettings {
   word_timestamps: boolean;
   translate_to_english: boolean;
   temperature: number;
+  initial_prompt?: string | null;
+  hotwords?: string | null;
 }
 
 export interface TranscriptionJob {
@@ -119,6 +128,7 @@ export interface HealthStatus {
   service: string;
   database: boolean;
   redis: boolean;
+  worker?: boolean;
   time: number;
 }
 
@@ -131,6 +141,11 @@ export interface AppSettings {
   default_word_timestamps: boolean;
   default_translate_to_english: boolean;
   visual_effects_enabled: boolean;
+  default_language?: string;
+  vocabulary?: string;
+  hotwords?: string;
+  low_confidence_threshold?: number;
+  notifications_enabled?: boolean;
   [key: string]: unknown;
 }
 
@@ -155,6 +170,7 @@ export interface ProgressEvent {
   error_code?: string | null;
   error_message?: string | null;
   new_segments?: TranscriptSegment[];
+  eta_seconds?: number | null;
   segments?: TranscriptSegment[];
   provisional_segments?: TranscriptSegment[];
   ts?: number;
@@ -171,11 +187,154 @@ export interface Organization {
   diarization_error: string | null;
 }
 
+export interface TextSnippet {
+  before: string;
+  match: string;
+  after: string;
+}
+
+export interface LibraryMatch extends Partial<TextSnippet> {
+  segment_id: string;
+  start: number;
+  speaker_id: string | null;
+}
+
 export interface LibraryItem extends Organization {
   job: TranscriptionJob;
   name: string;
   duration_seconds: number | null;
   media_type: MediaType;
+  matches?: LibraryMatch[];
+  match_count?: number;
+}
+
+export interface FacetValue {
+  value: string;
+  count: number;
+}
+
+export interface LibraryFacets {
+  folders: FacetValue[];
+  projects: FacetValue[];
+  tags: FacetValue[];
+}
+
+export interface LibraryStats {
+  recordings: number;
+  completed: number;
+  active: number;
+  transcribed_seconds: number;
+  words: number;
+  documents: number;
+  last_7_days: number;
+}
+
+export interface BulkResult {
+  action: "delete" | "organize";
+  done: string[];
+  skipped: { job_id: string; reason: string }[];
+}
+
+export interface SearchHit {
+  job_id: string;
+  segment_id: string;
+  start: number;
+  end: number;
+  title: string;
+  speaker: string | null;
+  snippet: TextSnippet;
+  job_created_at: string;
+}
+
+export interface SearchPage {
+  query: string;
+  total: number;
+  offset: number;
+  limit: number;
+  hits: SearchHit[];
+}
+
+export type BookmarkColor = "amber" | "violet" | "spectral" | "rose" | "blue";
+
+export interface Bookmark {
+  id: string;
+  job_id: string;
+  segment_id: string | null;
+  start: number;
+  label: string;
+  note: string;
+  color: BookmarkColor;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SpeakerStats {
+  speaker_id: string | null;
+  name: string;
+  segments: number;
+  words: number;
+  speech_seconds: number;
+  share: number;
+  longest_turn_seconds: number;
+  words_per_minute: number | null;
+}
+
+export interface TranscriptStats {
+  segment_count: number;
+  word_count: number;
+  duration_seconds: number;
+  speech_seconds: number;
+  silence_seconds: number;
+  words_per_minute: number | null;
+  speaker_turns: number;
+  speakers: SpeakerStats[];
+  longest_turn: {
+    speaker_id: string | null;
+    name: string;
+    start: number;
+    end: number;
+    seconds: number;
+  } | null;
+  questions: number;
+  low_confidence: {
+    threshold: number;
+    segments: number;
+    segment_ids: string[];
+    words: number;
+    words_total: number;
+  };
+  keywords: { term: string; count: number }[];
+  activity: number[];
+  activity_bucket_seconds: number;
+}
+
+export interface StorageInfo {
+  directories: Record<
+    "uploads" | "exports" | "tmp" | "models" | "database",
+    { bytes: number; files: number }
+  >;
+  disk: { total_bytes: number; free_bytes: number; used_bytes: number };
+  counts: Record<
+    "media" | "jobs" | "segments" | "documents" | "exports",
+    number
+  >;
+}
+
+export interface QueueStatus {
+  pending_questions?: number;
+  pending_recipes?: number;
+  queued: number | null;
+  worker_online: boolean;
+  pending_documents: number;
+  active_count: number;
+  active_jobs: {
+    id: string;
+    status: JobStatus;
+    progress: number;
+    current_stage: string | null;
+    title: string;
+  }[];
+  error: string | null;
 }
 
 export interface LibraryPage {

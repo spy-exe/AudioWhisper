@@ -16,9 +16,13 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from audiowhisper_core.config import get_settings
-from audiowhisper_core.models import DocumentDelivery, DocumentShare
+from audiowhisper_core.exports import safe_filename_stem
+from audiowhisper_core.intelligence import DOCUMENT_TITLES
+from audiowhisper_core.models import DocumentDelivery, DocumentShare, TranscriptionJob
 from app.dependencies import get_db
+from app.filenames import content_disposition
 from app.routers.documents import get_document, require_reviewed
+from app.services.workspace_service import title_for
 
 router = APIRouter(tags=["sharing"])
 
@@ -71,9 +75,11 @@ def download_document(document_id: str, format: Literal["pdf", "docx", "markdown
     document = get_document(db, document_id)
     if document.status not in ("generated", "reviewed"):
         raise HTTPException(409, "O documento ainda não está pronto.")
+    job = db.get(TranscriptionJob, document.job_id)
+    title = f"{DOCUMENT_TITLES.get(document.kind, 'Documento')} - {title_for(db, job)}" if job else "AudioWhisper"
     if format in ("pdf", "docx"):
         from audiowhisper_core.document_exports import export_document
-        content = export_document(format, "AudioWhisper", document.markdown)
+        content = export_document(format, title, document.markdown)
         mime = "application/pdf" if format == "pdf" else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     elif format == "json":
         content = json.dumps({"markdown": document.markdown, "items": json.loads(document.content_json)}, ensure_ascii=False)
@@ -81,7 +87,8 @@ def download_document(document_id: str, format: Literal["pdf", "docx", "markdown
     else:
         content, mime = document.markdown, "text/plain; charset=utf-8"
     extension = "md" if format == "markdown" else format
-    return Response(content, media_type=mime, headers={"Content-Disposition": f'attachment; filename="audiowhisper.{extension}"', "Cache-Control": "no-store"})
+    filename = f"{safe_filename_stem(title, 'audiowhisper')}.{extension}"
+    return Response(content, media_type=mime, headers={"Content-Disposition": content_disposition(filename), "Cache-Control": "no-store"})
 
 
 @router.get("/api/integrations")

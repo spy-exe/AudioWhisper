@@ -6,7 +6,7 @@ export default function Page() {
     <Suspense
       fallback={
         <div role="status" className="hub-loading">
-          Carregando assistente…
+          Carregando consultas…
         </div>
       }
     >

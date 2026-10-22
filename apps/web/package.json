@@ -1,6 +1,6 @@
 {
   "name": "audiowhisper-web",
-  "version": "0.1.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:visual": "node scripts/visual-check.mjs",
-    "test:visual:workspace": "node scripts/workspace-visual-check.mjs"
+    "test:visual:workspace": "node scripts/workspace-visual-check.mjs",
+    "test:visual:motion": "node scripts/motion-check.mjs"
   },
   "dependencies": {
     "@fontsource-variable/ibm-plex-sans": "^5.3.0",

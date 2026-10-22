@@ -1,8 +1,8 @@
-# AudioWhisper 2.0
+# AudioWhisper 2.1
 
 Aplicativo local para gravar, transcrever e organizar áudio. Captura em segundo plano no Windows,
 transcrição com GPU, biblioteca pesquisável, editor de falantes e preparação de documentos com
-fontes verificáveis. Exportação em sete formatos e compartilhamento após revisão explícita.
+fontes verificáveis. Exportação em oito formatos, pacote ZIP e compartilhamento após revisão explícita.
 
 O [workspace](docs/WORKSPACE.md) conecta projetos, busca por trechos, quadro de tarefas,
 notas e capítulos, consultas entre reuniões e modelos de documento. Abra
@@ -14,6 +14,11 @@ Interface com Manrope e IBM Plex Sans locais, texto de 17px e transcrição de 1
 biblioteca, editor e documentos compartilham a mesma identidade visual. Os efeitos respeitam
 a preferência de movimento reduzido e podem ser desativados nas configurações. Formulários e
 opções secundárias ficam recolhidos, com preservação de rascunhos e indicação dos filtros ativos.
+
+O editor reúne revisão de trechos incertos, divisão e junção de segmentos, atribuição manual
+de participantes e marcadores com atalhos de teclado. A biblioteca permite organizar várias
+gravações de uma vez. Vocabulário personalizado, fila de processamento e uso do armazenamento
+ficam nas configurações. Entradas de tela, abas, diálogos e recolhíveis possuem transições próprias.
 
 Veja as [capturas de desktop e mobile](docs/SCREENSHOTS.md), o [design system](DESIGN.md) e o
 [relatório de QA e cobertura](VALIDATION.md). O workflow Quality executa lint, TypeScript,

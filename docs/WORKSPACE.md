@@ -8,13 +8,13 @@ O Studio continua sendo o ponto de captura e importação. A Central reúne a co
 | Projetos | Crie um projeto em `/projects`; no editor, use **Organizar conversa e participantes** para atribuir a gravação. Projetos salvos anteriormente são preservados. |
 | Buscar trechos | Pesquise uma palavra ou expressão em `/search`. Filtre por projeto ou falante e abra o áudio no segmento encontrado. A busca normaliza acentos e permite prefixo na última palavra. |
 | Tarefas | Em `/tasks`, use quadro ou lista. Defina responsável, data, prioridade e estado. Arquivar é reversível. Ações de documentos revisados podem ser importadas pelo editor, sem duplicação. |
-| Caderno | No editor, escolha um segmento ou use **Usar trecho em reprodução**. Salve nota, marcador ou capítulo; consulte por projeto em `/notebook`. |
+| Caderno | No editor, escolha um segmento ou use **Usar trecho em reprodução**. Salve nota, trecho salvo ou capítulo; consulte por projeto em `/notebook`. Marcadores de tempo ficam na aba **Marcadores** do editor, também acessível por `M`. |
 | Consultas | Em `/knowledge`, escreva a pergunta, escolha um projeto e, opcionalmente, até 20 gravações. O modelo local fica nas opções da consulta. As respostas apontam para as fontes de cada item. |
 | Modelos | Em `/recipes`, salve um tipo de documento e suas instruções. Escolha uma gravação para executar ou habilite preparação automática para novas conclusões. |
 
 Criação de projetos, tarefas, modelos e registros do caderno fica recolhida. Abra o controle com o nome da ação; fechar e reabrir preserva o rascunho. Os filtros indicam a quantidade aplicada e mantêm os valores na URL.
 
-**Ctrl+K** abre os comandos rápidos. No celular, **Mais** dá acesso a todas as ferramentas. Formulários com alterações não salvas pedem uma decisão antes de sair. A captura Windows continua em seu processo independente quando o navegador fecha.
+**Ctrl+K** abre a busca e os comandos rápidos. Digite um termo e escolha **Buscar trechos** ou pressione Enter para localizar falas. No celular, **Mais** dá acesso a todas as ferramentas. Formulários com alterações não salvas pedem uma decisão antes de sair. A captura Windows continua em seu processo independente quando o navegador fecha.
 
 ## Fontes e revisão
 

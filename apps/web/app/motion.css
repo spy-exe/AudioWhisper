@@ -1,0 +1,248 @@
+/* Functional motion. MotionPreferences owns the app and operating-system switches. */
+:root {
+  --motion-fast: 160ms;
+  --motion-standard: 240ms;
+  --motion-reveal: 320ms;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes page-arrive {
+  from {
+    opacity: 0.55;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes panel-arrive {
+  from {
+    opacity: 0.35;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes tab-arrive {
+  from {
+    opacity: 0.4;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes dialog-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes feedback-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes backdrop-arrive {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.page-transition {
+  min-width: 0;
+  animation: page-arrive var(--motion-reveal) var(--motion-ease);
+}
+.hub-panel,
+.capture-card,
+.import-card,
+.project-card {
+  animation: panel-arrive var(--motion-reveal) var(--motion-ease) backwards;
+}
+.project-card:nth-child(2) {
+  animation-delay: 35ms;
+}
+.project-card:nth-child(3) {
+  animation-delay: 70ms;
+}
+.project-card:nth-child(4) {
+  animation-delay: 105ms;
+}
+.project-card:nth-child(n + 5) {
+  animation-delay: 140ms;
+}
+.import-card {
+  animation-delay: 55ms;
+}
+.hub-feedback {
+  animation: feedback-arrive var(--motion-standard) var(--motion-ease);
+}
+
+/* Native details retain their keyboard behavior and mounted form fields. */
+@supports (interpolate-size: allow-keywords) and
+  selector(details::details-content) {
+  :is(
+    .hub-create,
+    .hub-filter-disclosure,
+    .hub-disclosure,
+    .hub-sources,
+    .motion-disclosure
+  ) {
+    interpolate-size: allow-keywords;
+  }
+  :is(
+    .hub-create,
+    .hub-filter-disclosure,
+    .hub-disclosure,
+    .hub-sources,
+    .motion-disclosure
+  )::details-content {
+    height: 0;
+    opacity: 0;
+    overflow: clip;
+    transition:
+      height var(--motion-reveal) var(--motion-ease),
+      opacity var(--motion-standard) ease,
+      content-visibility var(--motion-reveal) allow-discrete;
+  }
+  :is(
+      .hub-create,
+      .hub-filter-disclosure,
+      .hub-disclosure,
+      .hub-sources,
+      .motion-disclosure
+    )[open]::details-content {
+    height: auto;
+    opacity: 1;
+  }
+}
+.hub-create > summary > svg {
+  transition: transform var(--motion-standard) var(--motion-ease);
+}
+.editor-options[open] > div {
+  animation: dialog-arrive var(--motion-standard) var(--motion-ease);
+  transform-origin: top right;
+}
+
+.side-tabs button {
+  position: relative;
+  isolation: isolate;
+}
+.side-tabs button[aria-selected="true"] {
+  background: transparent;
+}
+.side-tab-indicator {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  border: 1px solid #9bc7ff35;
+  background: var(--color-accent);
+  pointer-events: none;
+}
+.editor-tab-panel {
+  animation: tab-arrive var(--motion-standard) var(--motion-ease);
+}
+.dialog-backdrop {
+  animation: backdrop-arrive var(--motion-fast) ease;
+}
+.dialog-panel {
+  animation: dialog-arrive var(--motion-reveal) var(--motion-ease);
+}
+
+.workspace-dialog {
+  opacity: 0;
+  transform: translateY(12px) scale(0.98);
+  transition:
+    opacity var(--motion-standard) ease,
+    transform var(--motion-reveal) var(--motion-ease),
+    display var(--motion-reveal) allow-discrete,
+    overlay var(--motion-reveal) allow-discrete;
+}
+.workspace-dialog[open] {
+  opacity: 1;
+  transform: none;
+}
+.workspace-dialog::backdrop {
+  background-color: #02081400;
+  transition:
+    background-color var(--motion-standard) ease,
+    display var(--motion-reveal) allow-discrete,
+    overlay var(--motion-reveal) allow-discrete;
+}
+.workspace-dialog[open]::backdrop {
+  background-color: #020814b8;
+}
+@starting-style {
+  .workspace-dialog[open] {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  .workspace-dialog[open]::backdrop {
+    background-color: #02081400;
+  }
+}
+
+.field {
+  transition:
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease;
+}
+.field:focus-visible {
+  box-shadow: 0 0 0 4px #9bc7ff0c;
+}
+.app-nav-link svg,
+.command-trigger svg,
+.hub-primary-link svg {
+  transition: transform var(--motion-standard) var(--motion-ease);
+}
+@media (hover: hover) {
+  .app-nav-link:hover svg {
+    transform: translateX(2px);
+  }
+  .command-trigger:hover svg {
+    transform: scale(1.1);
+  }
+  .hub-primary-link:hover svg:last-child {
+    transform: translateX(3px);
+  }
+}
+
+/* Include native pseudo-elements: the universal * rule does not cover them. */
+@media (prefers-reduced-motion: reduce) {
+  details::details-content,
+  .workspace-dialog::backdrop {
+    transition-duration: 0.001ms !important;
+  }
+  .app-nav-link:hover svg,
+  .command-trigger:hover svg,
+  .hub-primary-link:hover svg:last-child {
+    transform: none;
+  }
+}
+html[data-reduced-motion="true"] details::details-content,
+html[data-reduced-motion="true"] .workspace-dialog::backdrop {
+  transition-duration: 0.001ms !important;
+}
+html[data-reduced-motion="true"] .app-nav-link:hover svg,
+html[data-reduced-motion="true"] .command-trigger:hover svg,
+html[data-reduced-motion="true"] .hub-primary-link:hover svg:last-child {
+  transform: none;
+}

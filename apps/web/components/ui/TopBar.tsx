@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { workspaceNavigation } from "@/lib/workspace-navigation";
 import { Icon } from "./Icon";
+import { QueueIndicator } from "@/components/jobs/QueueIndicator";
 import { CommandPalette } from "./CommandPalette";
 import { WorkspaceDialog } from "./WorkspaceDialog";
 
@@ -35,17 +36,18 @@ export function TopBar() {
           <Link
             href="/"
             className="brand-link"
-            aria-label="AudioWhisper, Studio"
+            aria-label="AudioWhisper 2.1, Studio"
           >
             <span className="brand-mark">
               <Icon name="studio" />
             </span>
             <span className="brand-title">
-              AudioWhisper <span className="brand-version">STUDIO 2.0</span>
+              AudioWhisper <span className="brand-version">STUDIO 2.1</span>
             </span>
           </Link>
           <div className="header-status">
             <CommandPalette />
+            <QueueIndicator />
             <span className="hidden items-center gap-2 text-xs text-text-muted md:flex">
               <Icon name="shield" className="size-4 text-success" />{" "}
               Processamento local

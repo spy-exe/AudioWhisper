@@ -11,6 +11,7 @@ export function CommandPalette() {
   const [open, setOpen] = useState(false),
     [query, setQuery] = useState("");
   const input = useRef<HTMLInputElement>(null);
+  const contentSearch = useRef<HTMLAnchorElement>(null);
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
@@ -48,7 +49,7 @@ export function CommandPalette() {
         onClick={() => setOpen(true)}
       >
         <Icon name="search" />
-        <span>Ir para…</span>
+        <span>Buscar…</span>
         <kbd>Ctrl K</kbd>
       </button>
       <WorkspaceDialog
@@ -57,7 +58,15 @@ export function CommandPalette() {
         title="Ir para"
         initialFocus={input}
       >
-        <div className="hub-search">
+        <form
+          noValidate
+          className="hub-search"
+          role="search"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (query.trim().length >= 2) contentSearch.current?.click();
+          }}
+        >
           <Icon name="search" />
           <input
             ref={input}
@@ -66,8 +75,11 @@ export function CommandPalette() {
             aria-label="Buscar comando"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Projetos, tarefas, gravações…"
+            placeholder="Buscar trechos ou abrir uma ferramenta"
+            maxLength={200}
             onKeyDown={(e) => {
+              if (e.key === "Enter" && e.nativeEvent.isComposing)
+                e.preventDefault();
               if (e.key === "ArrowDown") {
                 e.preventDefault();
                 document
@@ -88,7 +100,18 @@ export function CommandPalette() {
               ×
             </button>
           )}
-        </div>
+        </form>
+        {query.trim().length >= 2 && (
+          <Link
+            ref={contentSearch}
+            className="hub-primary-link mt-4"
+            href={`/search?q=${encodeURIComponent(query.trim())}`}
+            onClick={() => setOpen(false)}
+          >
+            <Icon name="search" />
+            Buscar trechos
+          </Link>
+        )}
         <nav
           className="command-options"
           aria-label="Comandos disponíveis"

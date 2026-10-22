@@ -481,7 +481,7 @@
   "errors": [],
   "motion": {
     "samples": 120,
-    "medianMs": 16.699999999999932,
+    "medianMs": 16.699999999999818,
     "p95Ms": 16.700000000000273,
     "framesOver50Ms": 0
   }

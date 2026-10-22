@@ -39,3 +39,18 @@ class UnsupportedFormatError(AppError):
 
     def __init__(self, message: str, details: dict | None = None) -> None:
         super().__init__(ErrorCode.UNSUPPORTED_FORMAT, message, details)
+
+
+class ConflictError(AppError):
+    status_code = 409
+
+    def __init__(self, message: str, details: dict | None = None) -> None:
+        super().__init__(ErrorCode.CONFLICT, message, details)
+
+
+class QueueUnavailableError(AppError):
+    status_code = 503
+
+    def __init__(self, message: str = "A fila de processamento está indisponível. Verifique o Redis e tente novamente.",
+                 details: dict | None = None) -> None:
+        super().__init__(ErrorCode.QUEUE_UNAVAILABLE, message, details)

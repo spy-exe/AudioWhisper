@@ -57,3 +57,38 @@ const STAGE_LABELS: Record<string, string> = {
 export function statusLabel(status: string): string {
   return STAGE_LABELS[status] ?? status;
 }
+
+export function formatEta(seconds: number | null | undefined): string | null {
+  if (seconds == null || !Number.isFinite(seconds) || seconds < 0) return null;
+  if (seconds < 45) return "menos de 1 min restante";
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `≈ ${minutes} min restante${minutes > 1 ? "s" : ""}`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return `≈ ${hours} h${rest ? ` ${rest} min` : ""} restantes`;
+}
+
+/** Long durations for summaries: "2 h 05 min", "12 min", "45 s". */
+export function formatLongDuration(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "0 s";
+  if (seconds < 60) return `${Math.round(seconds)} s`;
+  const totalMinutes = Math.round(seconds / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (!hours) return `${minutes} min`;
+  return `${hours} h ${String(minutes).padStart(2, "0")} min`;
+}
+
+export function formatCompactNumber(value: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    notation: value >= 10_000 ? "compact" : "standard",
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
+export function formatPercent(value: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "percent",
+    maximumFractionDigits: value < 0.1 ? 1 : 0,
+  }).format(value);
+}

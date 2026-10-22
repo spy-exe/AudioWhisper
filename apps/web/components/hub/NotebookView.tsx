@@ -23,7 +23,7 @@ import {
   useHubFilters,
 } from "./HubUI";
 
-const kinds = { note: "Nota", bookmark: "Marcador", chapter: "Capítulo" };
+const kinds = { note: "Nota", bookmark: "Trecho salvo", chapter: "Capítulo" };
 
 function NoteEdit({ note, refresh }: { note: Note; refresh: () => void }) {
   const [title, setTitle] = useState(note.title),

@@ -150,3 +150,46 @@ def seed_segments():
         return ids
 
     return _seed
+
+
+@pytest.fixture
+def make_completed_job(settings):
+    """A finished transcription as the worker leaves it: media on disk, completed job, segments
+    (optionally with speakers, confidence and word timings) and organization data."""
+    import json as _json
+
+    from audiowhisper_core.db import session_scope
+    from audiowhisper_core.models import MediaFile, TranscriptionJob, TranscriptSegment, WorkspaceItem
+
+    def _make(segments, *, title="", speakers=None, duration=None, status="completed", with_file=True,
+              name="reuniao.wav", folder="", project="", tags=None) -> dict:
+        media_id = str(uuid.uuid4())
+        stored = f"{media_id}.wav"
+        if with_file:
+            settings.uploads_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy(FIXTURES_DIR / "tiny.wav", settings.uploads_dir / stored)
+        ids = []
+        with session_scope() as db:
+            db.add(MediaFile(id=media_id, original_name=name, stored_name=stored, mime_type="audio/wav", extension="wav",
+                             size_bytes=64078 if with_file else 0, sha256=uuid.uuid4().hex, media_type="audio",
+                             duration_seconds=duration if duration is not None else max([s[2] for s in segments] or [0])))
+            job = TranscriptionJob(media_file_id=media_id, status=status, model_name="small", device="cpu",
+                                   compute_type="int8", progress=1.0 if status == "completed" else 0.3)
+            db.add(job)
+            db.flush()
+            for index, spec in enumerate(segments):
+                text, start, end = spec[:3]
+                extra = spec[3] if len(spec) > 3 else {}
+                segment = TranscriptSegment(job_id=job.id, segment_index=index, start=start, end=end, text=text,
+                                            confidence=extra.get("confidence", 0.9), speaker_id=extra.get("speaker"),
+                                            words_json=_json.dumps(extra["words"]) if extra.get("words") else None)
+                db.add(segment)
+                db.flush()
+                ids.append(segment.id)
+            if title or speakers or folder or project or tags:
+                db.add(WorkspaceItem(job_id=job.id, title=title, folder=folder, project=project,
+                                     tags_json=_json.dumps(tags or []), speakers_json=_json.dumps(speakers or {})))
+            job_id = job.id
+        return {"job_id": job_id, "media_id": media_id, "segment_ids": ids, "stored_name": stored}
+
+    return _make

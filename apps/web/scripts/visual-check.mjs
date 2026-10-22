@@ -39,6 +39,10 @@ try {
   assert.ok(editor, 'Run the Studio E2E fixture first: a completed synthetic meeting with a document is required');
   // Only synthetic fixture records may appear in documentation screenshots.
   await page.route('**/api/library?**', route => route.fulfill({ json: { items: safeItems.slice(0, 5), total: safeItems.length, offset: 0, limit: 5 } }));
+  await page.route('**/api/settings', async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, json: { ...await response.json(), vocabulary: '' } });
+  });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   for (const width of [320, 390, 768, 1024, 1440, 1920]) {
     await page.setViewportSize({ width, height: 1050 });
@@ -51,7 +55,7 @@ try {
       await page.waitForFunction(() => [...document.querySelectorAll('main [style*="opacity"]')].every(el => Number(getComputedStyle(el).opacity) >= 0.99));
       const layout = await page.evaluate(() => {
         const visible = el => el.getBoundingClientRect().width > 0 && getComputedStyle(el).visibility !== 'hidden';
-        const fields = [...document.querySelectorAll('main input, main select, main textarea')].filter(visible);
+        const fields = [...document.querySelectorAll('main input:not([type="checkbox"], [type="radio"], [type="range"]), main select, main textarea')].filter(visible);
         const controls = [...document.querySelectorAll('main button, main select, main input')].filter(visible);
         return {
           width: innerWidth, scroll: document.documentElement.scrollWidth,
@@ -64,7 +68,7 @@ try {
       });
       checks.push({ page: name, ...layout });
       assert.ok(layout.scroll <= width + 1, `${name} overflows at ${width}px: ${JSON.stringify(layout.overflow)}`);
-      assert.ok(layout.bodyFont >= 17 && layout.smallestField >= 14, `${name} has undersized text at ${width}px`);
+      assert.ok(layout.bodyFont >= 17 && layout.smallestField >= 16, `${name} has undersized text at ${width}px`);
       assert.ok(layout.smallestControl >= 24, `${name} has undersized controls at ${width}px`);
       if (name === 'workspace') assert.ok(layout.transcriptFont >= 19, 'Transcript must remain comfortably readable');
       if (name === 'workspace' && [390, 1440].includes(width)) {
@@ -100,7 +104,7 @@ try {
   states.push('library-loading');
   resume();
   await page.getByRole('status', { name: 'Carregando biblioteca' }).waitFor({ state: 'hidden' });
-  // Measure real rendered frames with ambient motion enabled on this workstation.
+  // Measure real rendered frames with visual effects enabled on this workstation.
   await page.route('**/api/settings', async route => {
     const response = await route.fetch();
     await route.fulfill({ response, json: { ...await response.json(), visual_effects_enabled: true } });

@@ -97,7 +97,11 @@ Sidebar de 248px a partir de 1024px, cabeçalho de 88px. A sidebar acomoda os de
 
 ## Elevation & Depth
 
-Painéis com bordas tonais e superfícies discretas. Não há animação ambiente ou arte decorativa no Studio e na central. Feedback de hover, foco e expansão usa 150 a 250ms. O sistema operacional ou a opção de desativar efeitos interrompem transições, preservando os estados finais e indicadores textuais. Skeletons reservam a geometria de carregamento. Projetos usam monogramas e quatro acentos.
+Painéis com bordas tonais e superfícies discretas. O movimento acompanha as operações: entrada de página com deslocamento de 8px, painéis com sequência curta, recolhíveis com expansão e recolhimento contínuos, abas com indicador deslizante e entrada lateral do conteúdo, diálogos com aproximação suave. Botões respondem a hover e pressão; campos destacam o foco. Feedback pequeno usa 160ms, trocas de conteúdo 240ms e expansões e entradas 320ms, com desaceleração na chegada. A sequência dos projetos limita o atraso a 140ms. Não há animação ambiente ou espera obrigatória antes de interagir.
+
+`apps/web/app/motion.css` concentra os tempos e a curva de movimento. Recolhíveis usam `::details-content` e interpolação de altura quando disponíveis; em outros navegadores, mantêm o comportamento nativo. O sistema operacional ou a opção de desativar efeitos interrompem transições, inclusive os pseudo-elementos nativos, preservando os estados finais, foco, rascunhos e indicadores textuais. Skeletons reservam a geometria de carregamento. Projetos usam monogramas e quatro acentos.
+
+Referências de implementação: [Chrome, animação de details](https://developer.chrome.com/blog/styling-details) e [Motion, acessibilidade](https://motion.dev/docs/react-accessibility).
 
 ## Divulgação progressiva
 

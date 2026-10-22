@@ -3,9 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { api, ApiError } from "@/lib/api";
+import { api, describeError } from "@/lib/api";
 import { LANGUAGE_OPTIONS, MODEL_OPTIONS } from "@/lib/constants";
 import { formatBytes, formatDuration } from "@/lib/format";
+import { signalQueueChanged } from "@/lib/events";
+import { transcriptionSettingsFrom } from "@/lib/transcription-settings";
 import type { AppSettings, MediaFile } from "@/lib/types";
 
 import { Badge } from "@/components/ui/Badge";
@@ -29,8 +31,12 @@ interface UploadQueueItemProps {
 
 export function UploadQueueItem({ item, appSettings, onRemove }: UploadQueueItemProps) {
   const router = useRouter();
-  const [model, setModel] = useState(appSettings?.default_model ?? "turbo");
-  const [language, setLanguage] = useState("");
+  // Only explicit choices are state: the defaults follow the settings, which may still be
+  // loading when the file is dropped (a captured "turbo" fallback would silently override them).
+  const [chosenModel, setModel] = useState<string | null>(null);
+  const [chosenLanguage, setLanguage] = useState<string | null>(null);
+  const model = chosenModel ?? appSettings?.default_model ?? "turbo";
+  const language = chosenLanguage ?? appSettings?.default_language ?? "";
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
 
@@ -39,20 +45,14 @@ export function UploadQueueItem({ item, appSettings, onRemove }: UploadQueueItem
     setStarting(true);
     setStartError(null);
     try {
-      const job = await api.createJob(item.media.id, {
-        model_name: model,
-        language: language || null,
-        device: appSettings?.transcription_device ?? "cuda",
-        compute_type: appSettings?.transcription_compute_type ?? "float16",
-        beam_size: appSettings?.default_beam_size ?? 5,
-        vad_enabled: appSettings?.default_vad_enabled ?? true,
-        word_timestamps: appSettings?.default_word_timestamps ?? true,
-        translate_to_english: appSettings?.default_translate_to_english ?? false,
-        temperature: 0,
-      });
+      const job = await api.createJob(
+        item.media.id,
+        transcriptionSettingsFrom(appSettings, { model_name: model, language: language || null }),
+      );
+      signalQueueChanged();
       router.push(`/jobs/${job.id}`);
     } catch (err) {
-      setStartError(err instanceof ApiError ? err.message : "Falha ao iniciar transcrição");
+      setStartError(describeError(err, "Falha ao iniciar transcrição. Tente novamente."));
       setStarting(false);
     }
   };
@@ -91,7 +91,7 @@ export function UploadQueueItem({ item, appSettings, onRemove }: UploadQueueItem
             aria-label="Modelo"
             value={model}
             onChange={(e) => setModel(e.target.value)}
-            className="rounded-md border border-border bg-surface-interactive px-2 py-1.5 text-xs text-text-primary"
+            className="rounded-md border border-border bg-surface-interactive px-2 py-1.5 text-sm text-text-primary"
           >
             {MODEL_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -103,7 +103,7 @@ export function UploadQueueItem({ item, appSettings, onRemove }: UploadQueueItem
             aria-label="Idioma"
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            className="rounded-md border border-border bg-surface-interactive px-2 py-1.5 text-xs text-text-primary"
+            className="rounded-md border border-border bg-surface-interactive px-2 py-1.5 text-sm text-text-primary"
           >
             {LANGUAGE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>

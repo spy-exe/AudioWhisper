@@ -6,9 +6,9 @@ import type { Application, Graphics, Ticker } from "pixi.js";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 interface AudioPulseProps {
-  /** 0..1 — ambient hum at rest, full energy while dragging/transcribing. */
+  /** 0..1 · ambient hum at rest, full energy while dragging/transcribing. */
   intensity?: number;
-  /** 0..1 real job progress — when provided, a sweep line reflects actual completion instead
+  /** 0..1 real job progress · when provided, a sweep line reflects actual completion instead
    * of being purely decorative. */
   progress?: number;
   disabled?: boolean;
@@ -18,7 +18,7 @@ interface AudioPulseProps {
 const BAR_COUNT = 56;
 const MAX_DPR = 2;
 
-/** PixiJS is a 2D WebGL/WebGPU renderer — far cheaper than a 3D particle scene, which matters
+/** PixiJS is a 2D WebGL/WebGPU renderer · far cheaper than a 3D particle scene, which matters
  * here because these two surfaces (drag feedback, live processing) run *while* the RTX is
  * actually busy transcribing. Three.js is reserved for a single marquee scene elsewhere
  * (see components/three/HeroScene.tsx) instead of being sprinkled in as generic decoration. */

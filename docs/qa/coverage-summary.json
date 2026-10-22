@@ -1,30 +1,30 @@
 {
   "date": "2026-10-22",
   "web": {
-    "tests": 99,
+    "tests": 237,
     "lines": {
-      "total": 2391,
-      "covered": 1419,
+      "total": 3133,
+      "covered": 2422,
       "skipped": 0,
-      "pct": 59.34
+      "pct": 77.3
     },
     "statements": {
-      "total": 2621,
-      "covered": 1506,
+      "total": 3434,
+      "covered": 2597,
       "skipped": 0,
-      "pct": 57.45
+      "pct": 75.62
     },
     "functions": {
-      "total": 863,
-      "covered": 429,
+      "total": 1147,
+      "covered": 819,
       "skipped": 0,
-      "pct": 49.71
+      "pct": 71.4
     },
     "branches": {
-      "total": 1947,
-      "covered": 1109,
+      "total": 2614,
+      "covered": 1912,
       "skipped": 0,
-      "pct": 56.95
+      "pct": 73.14
     },
     "branchesTrue": {
       "total": 0,
@@ -34,8 +34,8 @@
     },
     "criticalModules": {
       "components/jobs/LibraryView.tsx": {
-        "lines": 91.04,
-        "branches": 66.66
+        "lines": 95.58,
+        "branches": 83.44
       },
       "components/live/WindowsCapture.tsx": {
         "lines": 92.95,
@@ -50,12 +50,16 @@
         "branches": 78.18
       },
       "components/workspace/DocumentView.tsx": {
-        "lines": 89.47,
+        "lines": 91.11,
         "branches": 92.72
       },
       "hooks/useWorkspaceResource.ts": {
         "lines": 98.46,
         "branches": 79.31
+      },
+      "lib/api.ts": {
+        "lines": 100,
+        "branches": 97.77
       },
       "lib/capture-wake-lock.ts": {
         "lines": 100,
@@ -67,25 +71,25 @@
       },
       "lib/workspace-api.ts": {
         "lines": 100,
-        "branches": 100
+        "branches": 88.88
       }
     }
   },
   "backend": {
     "api": {
-      "tests": 97,
+      "tests": 213,
       "lines": {
-        "covered": 2276,
-        "total": 2516,
-        "pct": 90.46
+        "covered": 3331,
+        "total": 3443,
+        "pct": 96.75
       }
     },
     "worker": {
-      "tests": 38,
+      "tests": 72,
       "lines": {
-        "covered": 562,
-        "total": 806,
-        "pct": 69.73
+        "covered": 768,
+        "total": 817,
+        "pct": 94.0
       }
     },
     "windowsCapture": {
@@ -96,6 +100,7 @@
         "pct": 77.88
       },
       "modules": {
+        "__init__.py": 100.0,
         "__main__.py": 0.0,
         "audio.py": 90.55,
         "client.py": 96.67,

@@ -18,7 +18,7 @@ STALE_HEARTBEAT_SECONDS = 30
 
 
 @router.get("")
-def health(db: Session = Depends(get_db)) -> dict:
+def health(db: Session = Depends(get_db), settings: Settings = Depends(get_settings)) -> dict:
     db_ok = True
     try:
         db.execute(text("SELECT 1"))
@@ -26,16 +26,23 @@ def health(db: Session = Depends(get_db)) -> dict:
         db_ok = False
 
     redis_ok = True
+    worker_ok = False
     try:
-        get_redis_connection().ping()
+        connection = get_redis_connection()
+        connection.ping()
+        heartbeat = connection.get(settings.worker_heartbeat_key)
+        worker_ok = heartbeat is not None and time.time() - float(heartbeat) <= 2 * STALE_HEARTBEAT_SECONDS
     except RedisError:
         redis_ok = False
 
+    # The worker is reported but not part of "status": the API (and the gateway healthcheck that
+    # depends on it) must stay up while a worker restarts or downloads a model.
     return {
         "status": "ok" if (db_ok and redis_ok) else "degraded",
         "service": "api",
         "database": db_ok,
         "redis": redis_ok,
+        "worker": worker_ok,
         "time": time.time(),
     }
 

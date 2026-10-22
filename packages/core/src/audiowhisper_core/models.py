@@ -262,6 +262,19 @@ class DocumentDelivery(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
+class Bookmark(Base):
+    __tablename__ = "bookmarks"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    job_id: Mapped[str] = mapped_column(String(36), ForeignKey("transcription_jobs.id", ondelete="CASCADE"), index=True)
+    segment_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("transcript_segments.id", ondelete="SET NULL"), nullable=True)
+    start: Mapped[float] = mapped_column(Float)
+    label: Mapped[str] = mapped_column(String(200))
+    note: Mapped[str] = mapped_column(Text, default="")
+    color: Mapped[str] = mapped_column(String(16), default="amber")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+
+
 class LiveSession(Base):
     __tablename__ = "live_sessions"
     job_id: Mapped[str] = mapped_column(String(36), ForeignKey("transcription_jobs.id", ondelete="CASCADE"), primary_key=True)

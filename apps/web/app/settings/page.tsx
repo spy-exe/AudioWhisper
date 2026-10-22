@@ -3,14 +3,22 @@
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 
-import { MODEL_OPTIONS } from "@/lib/constants";
-import { api } from "@/lib/api";
-import type { GpuDiagnostics } from "@/lib/types";
+import {
+  DEFAULT_LOW_CONFIDENCE,
+  LANGUAGE_OPTIONS,
+  MODEL_OPTIONS,
+} from "@/lib/constants";
+import { api, describeError } from "@/lib/api";
+import { formatPercent } from "@/lib/format";
+import { requestNotificationPermission } from "@/lib/notifications";
+import type { AppSettings, GpuDiagnostics } from "@/lib/types";
 import { useSettings } from "@/contexts/SettingsContext";
 
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { Toggle } from "@/components/ui/Toggle";
+import { StoragePanel } from "@/components/settings/StoragePanel";
 import { IntelligenceSettings } from "@/components/workspace/IntelligenceSettings";
 
 const COMPUTE_TYPES = ["int8", "int8_float16", "float16", "float32"];
@@ -28,6 +36,12 @@ const PANEL_VARIANTS = {
 export default function SettingsPage() {
   const { settings, loading, update } = useSettings();
   const [gpu, setGpu] = useState<GpuDiagnostics | null>(null);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [vocabulary, setVocabulary] = useState({
+    vocabulary: "",
+    hotwords: "",
+  });
 
   useEffect(() => {
     api
@@ -36,11 +50,40 @@ export default function SettingsPage() {
       .catch(() => setGpu(null));
   }, []);
 
+  useEffect(() => {
+    if (settings)
+      setVocabulary({
+        vocabulary: settings.vocabulary ?? "",
+        hotwords: settings.hotwords ?? "",
+      });
+  }, [settings?.vocabulary, settings?.hotwords]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /** Every change goes through here: a rejected value is explained instead of failing silently. */
+  const save = async (values: Partial<AppSettings>, success?: string) => {
+    setError("");
+    setNotice("");
+    try {
+      await update(values);
+      if (success) setNotice(success);
+    } catch (failure) {
+      setError(
+        describeError(failure, "Não foi possível salvar a configuração."),
+      );
+    }
+  };
+
   if (loading || !settings) {
     return (
       <p className="p-8 text-sm text-text-muted">Carregando configurações…</p>
     );
   }
+
+  const threshold = Number(
+    settings.low_confidence_threshold ?? DEFAULT_LOW_CONFIDENCE,
+  );
+  const vocabularyChanged =
+    vocabulary.vocabulary !== (settings.vocabulary ?? "") ||
+    vocabulary.hotwords !== (settings.hotwords ?? "");
 
   return (
     <div className="settings-page">
@@ -50,6 +93,14 @@ export default function SettingsPage() {
           Ajuste os motores, o processamento e a experiência do seu Studio.
         </p>
       </div>
+      {(error || notice) && (
+        <p
+          role={error ? "alert" : "status"}
+          className={`settings-feedback ${error ? "text-danger" : "text-success"}`}
+        >
+          {error || notice}
+        </p>
+      )}
       <div className="settings-cards">
         <IntelligenceSettings />
 
@@ -120,7 +171,7 @@ export default function SettingsPage() {
             <Field label="Modelo padrão">
               <select
                 value={settings.default_model}
-                onChange={(e) => update({ default_model: e.target.value })}
+                onChange={(e) => save({ default_model: e.target.value })}
                 className="select-field"
               >
                 {MODEL_OPTIONS.map((o) => (
@@ -131,12 +182,24 @@ export default function SettingsPage() {
               </select>
             </Field>
 
+            <Field label="Idioma padrão">
+              <select
+                value={settings.default_language ?? ""}
+                onChange={(e) => save({ default_language: e.target.value })}
+                className="select-field"
+              >
+                {LANGUAGE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
             <Field label="Dispositivo">
               <select
                 value={settings.transcription_device}
-                onChange={(e) =>
-                  update({ transcription_device: e.target.value })
-                }
+                onChange={(e) => save({ transcription_device: e.target.value })}
                 className="select-field"
               >
                 {DEVICES.map((d) => (
@@ -151,7 +214,7 @@ export default function SettingsPage() {
               <select
                 value={settings.transcription_compute_type}
                 onChange={(e) =>
-                  update({ transcription_compute_type: e.target.value })
+                  save({ transcription_compute_type: e.target.value })
                 }
                 className="select-field"
               >
@@ -170,7 +233,7 @@ export default function SettingsPage() {
                 max={10}
                 value={settings.default_beam_size}
                 onChange={(e) =>
-                  update({ default_beam_size: Number(e.target.value) })
+                  save({ default_beam_size: Number(e.target.value) })
                 }
                 className="select-field w-20"
               />
@@ -179,17 +242,17 @@ export default function SettingsPage() {
             <Toggle
               label="VAD (detecção de atividade de voz)"
               checked={settings.default_vad_enabled}
-              onChange={(v) => update({ default_vad_enabled: v })}
+              onChange={(v) => save({ default_vad_enabled: v })}
             />
             <Toggle
               label="Timestamps por palavra"
               checked={settings.default_word_timestamps}
-              onChange={(v) => update({ default_word_timestamps: v })}
+              onChange={(v) => save({ default_word_timestamps: v })}
             />
             <Toggle
               label="Traduzir para inglês"
               checked={settings.default_translate_to_english}
-              onChange={(v) => update({ default_translate_to_english: v })}
+              onChange={(v) => save({ default_translate_to_english: v })}
             />
           </Panel>
         </motion.div>
@@ -202,14 +265,139 @@ export default function SettingsPage() {
         >
           <Panel raised className="flex flex-col gap-4 p-5">
             <h2 className="text-sm font-medium uppercase tracking-wide text-text-muted">
+              Vocabulário
+            </h2>
+            <p className="text-sm leading-relaxed text-text-secondary">
+              Nomes de pessoas, empresas, siglas e termos técnicos ajudam o
+              reconhecimento a escrever certo o que foi dito. Eles não são
+              inseridos no texto.
+            </p>
+            <form
+              noValidate
+              className="flex flex-col gap-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void save(
+                  vocabulary,
+                  "Vocabulário salvo. Vale para as próximas transcrições.",
+                );
+              }}
+            >
+              <label className="text-sm text-text-secondary">
+                Contexto e grafias
+                <textarea
+                  className="field mt-2 min-h-24 resize-y resize-none"
+                  maxLength={1000}
+                  value={vocabulary.vocabulary}
+                  placeholder="Ex.: Reunião da Opikode com Ana Paula e Rodrigo sobre Trofi, Kubernetes e LGPD."
+                  onChange={(e) =>
+                    setVocabulary({ ...vocabulary, vocabulary: e.target.value })
+                  }
+                />
+                <span className="mt-1 block text-xs text-text-muted">
+                  {vocabulary.vocabulary.length}/1000
+                </span>
+              </label>
+              <label className="text-sm text-text-secondary">
+                Palavras prioritárias
+                <input
+                  className="field mt-2"
+                  maxLength={500}
+                  value={vocabulary.hotwords}
+                  placeholder="Ex.: PostgreSQL, Kubernetes, AudioWhisper"
+                  onChange={(e) =>
+                    setVocabulary({ ...vocabulary, hotwords: e.target.value })
+                  }
+                />
+              </label>
+              <div>
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant="primary"
+                  disabled={!vocabularyChanged}
+                >
+                  Salvar vocabulário
+                </Button>
+              </div>
+            </form>
+          </Panel>
+        </motion.div>
+
+        <motion.div
+          custom={3}
+          variants={PANEL_VARIANTS}
+          initial="hidden"
+          animate="visible"
+        >
+          <Panel raised className="flex flex-col gap-4 p-5">
+            <h2 className="text-sm font-medium uppercase tracking-wide text-text-muted">
+              Revisão e avisos
+            </h2>
+            <label className="text-sm text-text-secondary">
+              Destacar trechos com confiança abaixo de{" "}
+              <strong className="text-text-primary">
+                {formatPercent(threshold)}
+              </strong>
+              <input
+                type="range"
+                min={0.3}
+                max={0.9}
+                step={0.05}
+                value={threshold}
+                className="mt-3 h-10 w-full accent-[var(--color-accent)]"
+                aria-valuetext={formatPercent(threshold)}
+                onChange={(e) =>
+                  save({ low_confidence_threshold: Number(e.target.value) })
+                }
+              />
+            </label>
+            <Toggle
+              label="Avisar quando uma transcrição terminar com a aba em segundo plano"
+              checked={Boolean(settings.notifications_enabled)}
+              onChange={async (enabled) => {
+                if (!enabled) return save({ notifications_enabled: false });
+                const permission = await requestNotificationPermission();
+                if (permission === "granted")
+                  return save(
+                    { notifications_enabled: true },
+                    "Avisos ativados neste navegador.",
+                  );
+                setError(
+                  permission === "unsupported"
+                    ? "Este navegador não oferece notificações."
+                    : "O navegador bloqueou as notificações. Libere a permissão do site e tente de novo.",
+                );
+              }}
+            />
+          </Panel>
+        </motion.div>
+
+        <motion.div
+          custom={4}
+          variants={PANEL_VARIANTS}
+          initial="hidden"
+          animate="visible"
+        >
+          <Panel raised className="flex flex-col gap-4 p-5">
+            <h2 className="text-sm font-medium uppercase tracking-wide text-text-muted">
               Interface
             </h2>
             <Toggle
               label="Efeitos visuais (waveform reativa e cena ambiente)"
               checked={settings.visual_effects_enabled}
-              onChange={(v) => update({ visual_effects_enabled: v })}
+              onChange={(v) => save({ visual_effects_enabled: v })}
             />
           </Panel>
+        </motion.div>
+
+        <motion.div
+          custom={5}
+          variants={PANEL_VARIANTS}
+          initial="hidden"
+          animate="visible"
+        >
+          <StoragePanel />
         </motion.div>
       </div>
       <style>{`

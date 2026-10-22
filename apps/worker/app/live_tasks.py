@@ -15,7 +15,7 @@ from audiowhisper_core.exports import generate_export
 from audiowhisper_core.models import LiveChunk, LiveSession, MediaFile, TranscriptionJob, TranscriptSegment
 from audiowhisper_core.progress import progress_channel
 from audiowhisper_core.schemas import TranscriptSegmentOut
-from app.tasks import get_model_manager
+from app.tasks import get_model_manager, transcribe_options
 
 
 def provisional_segments(db, job_id):
@@ -62,9 +62,7 @@ def process_live_chunk(chunk_id):
             options = json.loads(job.settings_json)
             loaded = get_model_manager(settings).get_model(job.model_name, job.device, job.compute_type, job.id)
             segments, info = loaded.model.transcribe(str(settings.uploads_dir / chunk.path),
-                language=options.get("language") or None, beam_size=options.get("beam_size", 5),
-                task="translate" if options.get("translate_to_english") else "transcribe",
-                vad_filter=options.get("vad_enabled", True), word_timestamps=True)
+                word_timestamps=True, **transcribe_options(options))
             result = []
             for i, segment in enumerate(segments):
                 words = [{"word": w.word, "start": w.start + chunk.start, "end": w.end + chunk.start, "probability": w.probability} for w in (segment.words or [])]

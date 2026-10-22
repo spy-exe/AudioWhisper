@@ -21,7 +21,7 @@ export function EvidenceSearch() {
     (signal) =>
       workspaceApi.search(
         {
-          q,
+          q: q.trim().length < 2 ? "" : q,
           project: filters.params.get("project") ?? "",
           speaker: filters.params.get("speaker") ?? "",
           offset: filters.params.get("offset") ?? "0",
@@ -80,10 +80,10 @@ export function EvidenceSearch() {
         {...resource}
         retry={resource.refresh}
         empty={
-          !q
+          q.trim().length < 2
             ? {
                 title: "Busque no conteúdo das gravações",
-                text: "Digite uma palavra ou expressão da transcrição.",
+                text: "Digite pelo menos dois caracteres da transcrição.",
               }
             : resource.data?.items.length === 0
               ? {
@@ -104,17 +104,29 @@ export function EvidenceSearch() {
                 {String((resource.data?.offset ?? 0) + i + 1).padStart(2, "0")}
               </div>
               <article>
-                <div className="evidence-meta">
-                  <span>{hit.project || "Sem projeto"}</span>
-                  <span>{hit.speaker}</span>
-                  <time>{formatTimestamp(hit.start)}</time>
-                </div>
-                <h3>{hit.title}</h3>
-                <p>{hit.text}</p>
-                <Link href={sourceUrl(hit)} className="hub-text-link">
-                  <Icon name="studio" />
-                  Ouvir trecho · {formatTimestamp(hit.start)}
-                  <Icon name="arrow" />
+                <Link href={sourceUrl(hit)}>
+                  <div className="evidence-meta">
+                    <span>{hit.project || "Sem projeto"}</span>
+                    <span>{hit.speaker}</span>
+                    <time>{formatTimestamp(hit.start)}</time>
+                  </div>
+                  <h3>{hit.title}</h3>
+                  <p className="evidence-hit-text">
+                    {hit.snippet ? (
+                      <>
+                        {hit.snippet.before}
+                        <mark>{hit.snippet.match}</mark>
+                        {hit.snippet.after}
+                      </>
+                    ) : (
+                      hit.text
+                    )}
+                  </p>
+                  <span className="hub-text-link">
+                    <Icon name="studio" />
+                    Ouvir trecho · {formatTimestamp(hit.start)}
+                    <Icon name="arrow" />
+                  </span>
                 </Link>
               </article>
             </li>

@@ -1,0 +1,54 @@
+{
+  "interactions": [
+    {
+      "name": "disclosure-open",
+      "samples": 31,
+      "from": 0,
+      "to": 481.562,
+      "intermediateFrames": 13
+    },
+    {
+      "name": "disclosure-close",
+      "samples": 30,
+      "from": 481.562,
+      "to": 0,
+      "intermediateFrames": 13
+    },
+    {
+      "name": "dialog-open",
+      "samples": 12,
+      "intermediateFrames": 3
+    },
+    {
+      "name": "dialog-close",
+      "samples": 16
+    },
+    {
+      "name": "os-reduced",
+      "samples": 31,
+      "immediate": true
+    },
+    {
+      "name": "app-disabled",
+      "samples": 31,
+      "immediate": true
+    },
+    {
+      "name": "tabs-and-keyboard",
+      "samples": 24,
+      "markerAligned": true
+    },
+    {
+      "name": "page-navigation",
+      "samples": 26,
+      "settled": true
+    }
+  ],
+  "errors": [],
+  "frameTiming": {
+    "samples": 120,
+    "medianMs": 16.699999999999818,
+    "p95Ms": 16.700000000000273,
+    "framesOver50Ms": 0
+  }
+}

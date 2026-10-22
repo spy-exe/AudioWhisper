@@ -8,12 +8,12 @@ Fontes: `ARCHITECTURE.md`; contratos de `apps/api/app/routers`; identidade em `D
 | Form | labels e Button compartilhado | rotas e schemas Pydantic | upload/settings/workspace | API + browser |
 | Scrollbar | app/globals.css | DESIGN.md | geometria de lista | computed style |
 | CRUD | lib/api.ts + routers | contratos FastAPI | edição fica no workspace | API + Playwright |
-| Motion | MotionPreferences + useMotionPreference | DESIGN.md e visual_effects_enabled | sistema reduzido ou efeitos desligados | Playwright + computed style |
+| Motion | MotionPreferences + useMotionPreference + app/motion.css | DESIGN.md e visual_effects_enabled | completo, sistema reduzido ou efeitos desligados | frames intermediários, foco e rascunhos no Playwright |
 | Documento | DocumentContent | Markdown do documento revisável | privado e compartilhado | componentes + Playwright |
 | Fonte de captura | CaptureSources | modos de /api/live | microfone/desktop/combinado/OBS | componentes + WASAPI |
 | Captura Windows | WindowsCapture + audiowhisper_capture | processo local e diário em disco | independente do navegador | pytest + fechamento do Chromium |
 | Workspace | componentes/hub + workspaceApi | SPECs do CAPABILITY-MAP e rotas /api/projects, /api/tasks, /api/notebook | central/projetos/ações/caderno | API + testes de componentes + fluxo completo |
-| Diálogos | WorkspaceDialog | contrato HTML dialog + DESIGN.md | comandos, menu móvel e proteção de rascunho | foco, Escape, restauração e teclado no navegador |
+| Diálogos | WorkspaceDialog e Dialog | contrato HTML dialog + DESIGN.md | nativo para navegação e rascunhos; Dialog para edição e confirmações do Studio | foco, Escape, restauração e teclado no navegador |
 | Navegação | workspace-navigation + TopBar + CommandPalette | CAPABILITY-MAP.md | sidebar desktop, menu móvel, Ctrl+K | navegação e screenshots |
 | Datas | input type=date nativo | prazo explícito em /api/tasks | calendário do navegador/SO; datas formatadas em pt-BR | seleção e persistência no navegador |
 | Fontes | audiowhisper_core.evidence + SourceList | snapshot literal + hash de texto/tempo/falante | tarefas, caderno e respostas | origem, alterações e links de áudio |

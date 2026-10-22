@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import Request
 from starlette.responses import Response, StreamingResponse
 
-_RANGE_RE = re.compile(r"bytes=(\d*)-(\d*)")
+_RANGE_RE = re.compile(r"bytes=(\d*)-(\d*)\s*")
 _CHUNK_SIZE = 1024 * 1024
 
 
@@ -20,6 +20,14 @@ def _iter_file(path: Path, start: int, length: int):
             yield chunk
 
 
+def _full_response(path: Path, file_size: int, media_type: str) -> StreamingResponse:
+    return StreamingResponse(
+        _iter_file(path, 0, file_size),
+        media_type=media_type,
+        headers={"Accept-Ranges": "bytes", "Content-Length": str(file_size)},
+    )
+
+
 def range_file_response(request: Request, path: Path, media_type: str) -> Response:
     """Streams a file with HTTP Range support (206 Partial Content), required for
     <audio>/<video> seeking. Starlette's built-in FileResponse doesn't support this."""
@@ -27,13 +35,13 @@ def range_file_response(request: Request, path: Path, media_type: str) -> Respon
     range_header = request.headers.get("range")
 
     if range_header is None:
-        return StreamingResponse(
-            _iter_file(path, 0, file_size),
-            media_type=media_type,
-            headers={"Accept-Ranges": "bytes", "Content-Length": str(file_size)},
-        )
+        return _full_response(path, file_size, media_type)
 
-    match = _RANGE_RE.match(range_header)
+    if "," in range_header:
+        # Multipart ranges are optional (RFC 9110 §14.2); players only ask for one, so serve it all.
+        return _full_response(path, file_size, media_type)
+
+    match = _RANGE_RE.fullmatch(range_header.strip())
     if not match:
         return Response(status_code=416, headers={"Content-Range": f"bytes */{file_size}"})
 
@@ -41,9 +49,15 @@ def range_file_response(request: Request, path: Path, media_type: str) -> Respon
     if not start_str and not end_str:
         return Response(status_code=416, headers={"Content-Range": f"bytes */{file_size}"})
 
-    start = int(start_str) if start_str else 0
-    end = int(end_str) if end_str else file_size - 1
-    end = min(end, file_size - 1)
+    if not start_str:
+        # Suffix range: "bytes=-500" is the LAST 500 bytes, not bytes 0-500.
+        suffix = int(end_str)
+        if suffix == 0:
+            return Response(status_code=416, headers={"Content-Range": f"bytes */{file_size}"})
+        start, end = max(0, file_size - suffix), file_size - 1
+    else:
+        start = int(start_str)
+        end = min(int(end_str) if end_str else file_size - 1, file_size - 1)
 
     if start > end or start >= file_size:
         return Response(status_code=416, headers={"Content-Range": f"bytes */{file_size}"})

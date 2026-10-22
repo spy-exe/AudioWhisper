@@ -63,6 +63,7 @@ export interface Note extends Sourced {
   created_at: string;
 }
 export interface SearchHit {
+  snippet?: { before: string; match: string; after: string };
   segment_id: string;
   job_id: string;
   title: string;
@@ -149,8 +150,11 @@ export const workspaceApi = {
     name: string,
     body: { description: string; color: Project["color"] },
   ) => send<Project>(`/api/projects/${encodeURIComponent(name)}`, "PUT", body),
-  search: (params?: Params, signal?: AbortSignal) =>
-    get<Page<SearchHit>>("/api/search", params, signal),
+  search: (params?: Params, signal?: AbortSignal) => {
+    const values = new URLSearchParams(query(params));
+    if (!values.has("q")) values.set("q", "");
+    return request<Page<SearchHit>>(`/api/search?${values}`, { signal });
+  },
   tasks: (params?: Params, signal?: AbortSignal) =>
     get<Page<Task>>("/api/tasks", params, signal),
   createTask: (body: {

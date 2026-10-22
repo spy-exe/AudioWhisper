@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-22",
+  "environment": "Windows, Docker Compose, Chromium desktop and Pixel 7 emulation, CUDA, local Ollama",
+  "completeRun": { "cases": 64, "passed": 59, "failed": 4, "skipped": 1 },
+  "editorAndStudio21Retest": { "cases": 24, "passed": 24, "failed": 0 },
+  "finalUniqueCases": { "passed": 63, "skipped": 1, "unresolvedFailures": 0 },
+  "resolved": [
+    "Save indicator selector now matches exact feedback and verifies persistence after reload.",
+    "Editor tabs fit at 320px without reducing text size.",
+    "Dialogs escape transformed panels and make covered background controls inert."
+  ],
+  "skipReason": "The Windows background-capture scenario runs once with its own Chromium process, not in the mobile project.",
+  "commands": [
+    "npx playwright test --workers=1",
+    "npx playwright test editor.spec.ts studio21.spec.ts --workers=1"
+  ]
+}

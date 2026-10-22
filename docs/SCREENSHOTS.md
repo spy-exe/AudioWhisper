@@ -30,6 +30,12 @@ Capturador em processo separado com entrada sintética. O histórico pessoal foi
 
 ![Editor e documento no celular](screenshots/workspace-mobile.png)
 
+![Revisão, participação e linha do tempo](screenshots/editor-review.png)
+
+![Revisão no celular](screenshots/editor-review-mobile.png)
+
+![Marcadores ligados ao áudio](screenshots/editor-markers.png)
+
 ## Configurações
 
 ![Configurações](screenshots/settings-desktop.png)
@@ -70,4 +76,4 @@ Capturador em processo separado com entrada sintética. O histórico pessoal foi
 
 ![Carregamento](screenshots/library-loading.png)
 
-As matrizes de seis larguras são produzidas por `npm run test:visual` e `npm run test:visual:workspace`. Veja [VALIDATION.md](../VALIDATION.md) e o [relatório do Studio](qa/visual-report.json) e o [relatório das ferramentas](qa/workspace-visual-report.json).
+As matrizes de seis larguras são produzidas por `npm run test:visual` e `npm run test:visual:workspace`. `npm run test:visual:motion` mede os frames reais de expansão, recolhimento, diálogos, abas e navegação, com efeitos completos, reduzidos e desligados. Veja [VALIDATION.md](../VALIDATION.md), o [relatório do Studio](qa/visual-report.json), o [relatório das ferramentas](qa/workspace-visual-report.json) e o [relatório de movimento](qa/motion-report.json).

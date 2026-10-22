@@ -68,6 +68,54 @@ Esta é uma instalação local single-user, não um sistema multitenant. Para ex
 | Distribuição e acesso | `routers/sharing.py`, `routers/session.py`, `app/auth.py`, `components/workspace/SharePanel.tsx` |
 | Exportação | `audiowhisper_core/exports.py`, `document_exports.py` |
 | Recuperação do worker | `app/recovery.py` |
+| Busca e biblioteca 2.1 | `audiowhisper_core/text.py`, `routers/search.py`, `routers/library.py`, `components/search/SearchView.tsx` |
+| Insights | `audiowhisper_core/stats.py`, `routers/jobs.py` (`/stats`), `components/editor/InsightsPanel.tsx` |
+| Marcadores | `routers/bookmarks.py`, `components/editor/BookmarksPanel.tsx` |
+| Edição estrutural e falantes manuais | `services/job_service.py`, `routers/speakers.py`, `components/editor/TranscriptEditor.tsx` |
+| Sistema e fila | `routers/system.py`, `components/settings/StoragePanel.tsx`, `components/jobs/QueueIndicator.tsx` |
+| Diálogos | `components/ui/Dialog.tsx`, `components/ui/ConfirmDialog.tsx` |
+
+## Studio 2.1 — revisão e busca
+
+O resumo das novidades está no [CHANGELOG](CHANGELOG.md). Esta seção descreve o funcionamento.
+
+### Busca sem acento
+
+O SQLite não tem `unaccent`. Cada conexão registra a função determinística `aw_fold` (`audiowhisper_core.text.fold_text`: NFKD sem marcas combinantes + `casefold`). A biblioteca e `/api/search` comparam `aw_fold(coluna) LIKE aw_fold(termo)`, com `%`, `_` e `\` digitados tratados como literais. Os trechos de contexto são cortados em limites de palavra e mapeiam a posição do texto dobrado de volta ao original, o que vale mesmo quando o tamanho muda (como em "ß" → "ss"). A URL `/jobs/{id}?t=SEGUNDOS` abre o editor no instante e seleciona o trecho. Assim como os filtros da biblioteca, `q` em `/search` é uma exceção explícita, que pode ser limpa, à regra de não colocar conteúdo em URLs.
+
+### Insights e confiança
+
+`GET /api/jobs/{id}/stats` calcula tudo a partir dos segmentos persistidos: união dos intervalos com fala, palavras, ritmo sobre o tempo falado, participação e maior turno por falante, trocas de turno, perguntas (trechos terminados em "?"), termos frequentes sem palavras vazias em português e inglês, e atividade por faixa de tempo. A confiança de cada trecho é a média de `exp(avg_logprob)` do faster-whisper. O limiar de "incerto" (padrão de 60%) fica em `low_confidence_threshold`. Nenhum valor é estimado: sem falantes atribuídos, a participação aparece como "Não identificado".
+
+### Edição estrutural
+
+Dividir (`POST …/segments/{id}/split`) usa a posição do cursor. Com horários por palavra, o corte acontece no início da primeira palavra da segunda parte; sem eles, o tempo é proporcional ao texto. Juntar (`POST …/segments/merge`) exige trechos consecutivos, une palavras e texto e recalcula a confiança ponderada pela duração. As duas operações renumeram `segment_index`, movem os marcadores afetados e só valem para transcrições concluídas. Como alteram o hash da fonte, documentos gerados antes ficam marcados como desatualizados. O editor salva as edições pendentes antes de reorganizar e limpa o histórico de desfazer, cujas cópias apontariam para trechos que deixaram de existir.
+
+### Participantes e marcadores
+
+Participantes podem ser criados sem diarização (`manual-N`), mesclados (todos os trechos de A passam para B) e removidos (os trechos voltam a "Não identificado"). `PUT …/segments/speaker` atribui um falante a vários trechos de uma vez. Marcadores (`/api/jobs/{id}/bookmarks`, `/api/bookmarks/{id}`) guardam horário, nome, nota e uma de cinco cores do design system, com limite de 500 por gravação. A migração `f3b021` cria a tabela com colunas explícitas, porque a `e2a010` monta suas tabelas a partir dos modelos atuais e não poderia ser reaproveitada.
+
+### Vocabulário
+
+`vocabulary` e `hotwords` (configurações) chegam ao faster-whisper como `initial_prompt` e `hotwords` em arquivos, capturas e novas transcrições. Eles orientam a grafia de nomes e termos realmente falados e não são inseridos no texto. Upload, captura e retranscrição montam as configurações com a mesma função (`lib/transcription-settings.ts`).
+
+### Exportação
+
+`render_export` é a única fonte de todos os formatos: falantes por turno no TXT e no Markdown, `Nome:` no SRT, `<v Nome>` no VTT (com `&`, `<` e `>` escapados) e CSV com BOM UTF-8 e células iniciadas por `= + - @` neutralizadas. Legendas ignoram trechos vazios. `GET …/exports/bundle` gera o ZIP em memória, sem gravar no disco. Os nomes de arquivo vêm do título (`Content-Disposition` com `filename*` UTF-8). PDF e DOCX interpretam `**negrito**`, listas e tabelas de metadados.
+
+### Operação
+
+- `GET /api/system/storage`: bytes e arquivos por pasta, banco (incluindo WAL) e disco.
+- `POST /api/system/cleanup` com `tmp` ou `exports`: remove só dados regeneráveis. Temporários de jobs ativos e arquivos com menos de 15 minutos ficam.
+- `GET /api/system/queue`: fila, jobs em andamento (os que estão rodando primeiro), documentos pendentes e presença do worker pelo heartbeat. O indicador do cabeçalho consulta a cada 8 s, pausa com a aba oculta e atualiza na hora quando um job começa ou termina na página.
+- `GET /api/health` informa `worker` sem alterar `status`: a API segue saudável enquanto o worker reinicia ou baixa um modelo.
+- `DELETE /api/jobs/{id}` recusa jobs ativos, remove linhas, exportações e trechos live depois do commit e apaga o arquivo original apenas quando nenhuma outra execução o usa. `POST /api/library/bulk` aplica exclusão ou organização item a item e devolve o que foi mantido e o motivo.
+- `POST /api/jobs/{id}/retranscribe` cria uma nova execução sobre a mesma mídia e copia título, pasta, projeto e tags (os falantes não, porque os trechos mudam).
+- O esquema OpenAPI fica em `/api/openapi.json`, sujeito ao mesmo token da API. Não há páginas Swagger/ReDoc, que carregariam recursos de CDNs públicas.
+
+### Erros
+
+Erros não tratados viram `500` com `INTERNAL_ERROR`, `request_id` e o cabeçalho `X-Request-ID`, sem detalhes internos; o traceback vai para o log da API. Se a fila estiver indisponível ao criar ou repetir uma transcrição, o job passa a `failed` com `QUEUE_UNAVAILABLE` e o botão "Tentar novamente" fica disponível. Encerrar ou recuperar uma captura nessa situação responde `503` e mantém o estado salvo; a recuperação do worker também finaliza capturas em `stopping`. As configurações são validadas por completo, com mensagens por campo, e chaves desconhecidas continuam sendo ignoradas. No navegador, falhas de rede viram uma mensagem em português e cancelamentos (`AbortError`) continuam silenciosos.
 
 ## Validação
 

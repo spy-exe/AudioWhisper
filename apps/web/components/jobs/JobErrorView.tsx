@@ -1,18 +1,23 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 
-import { api, ApiError } from "@/lib/api";
+import { api, describeError } from "@/lib/api";
 import type { TranscriptionJob } from "@/lib/types";
 
 import { Button } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { StatusIcon } from "@/components/ui/StatusIcon";
 
-export function JobErrorView({ job }: { job: TranscriptionJob }) {
-  const router = useRouter();
+export function JobErrorView({
+  job,
+  onRetried,
+}: {
+  job: TranscriptionJob;
+  onRetried: (job: TranscriptionJob) => void;
+}) {
   const [retrying, setRetrying] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,10 +27,11 @@ export function JobErrorView({ job }: { job: TranscriptionJob }) {
     setRetrying(true);
     setError(null);
     try {
-      await api.retryJob(job.id);
-      router.refresh();
+      // The page keeps its own job state: hand the requeued job back instead of a server refresh,
+      // which would leave this error view on screen.
+      onRetried(await api.retryJob(job.id));
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Falha ao reprocessar");
+      setError(describeError(err, "Falha ao reprocessar. Tente novamente."));
       setRetrying(false);
     }
   };
@@ -53,11 +59,18 @@ export function JobErrorView({ job }: { job: TranscriptionJob }) {
           {job.error_message}
         </Panel>
       )}
-      {error && <p className="text-sm text-danger">{error}</p>}
-      <div className="mx-auto">
+      {error && (
+        <p role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      )}
+      <div className="mx-auto flex flex-wrap justify-center gap-3">
         <Button variant="primary" onClick={handleRetry} disabled={retrying}>
           {retrying ? "Reiniciando…" : "Tentar novamente"}
         </Button>
+        <Link href="/library" className="inline-flex min-h-12 items-center px-4 text-sm text-text-secondary hover:text-accent">
+          Voltar à biblioteca
+        </Link>
       </div>
     </motion.div>
   );

@@ -29,6 +29,7 @@ class ExportFormat(str, Enum):
     JSON = "json"
     SRT = "srt"
     VTT = "vtt"
+    CSV = "csv"
 
 
 class Device(str, Enum):
@@ -41,6 +42,15 @@ class ComputeType(str, Enum):
     INT8_FLOAT16 = "int8_float16"
     FLOAT16 = "float16"
     FLOAT32 = "float32"
+
+
+# faster-whisper model names accepted by the API. Anything else would only fail later in the worker,
+# after a slow fallback ladder, instead of being rejected with a clear validation error.
+KNOWN_MODELS = (
+    "tiny", "tiny.en", "base", "base.en", "small", "small.en", "medium", "medium.en",
+    "large-v1", "large-v2", "large-v3", "large", "turbo", "large-v3-turbo",
+    "distil-small.en", "distil-medium.en", "distil-large-v2", "distil-large-v3",
+)
 
 
 class ModelSize(str, Enum):
@@ -65,3 +75,5 @@ class ErrorCode(str, Enum):
     INTERNAL_ERROR = "INTERNAL_ERROR"
     VALIDATION_ERROR = "VALIDATION_ERROR"
     FILE_TOO_LARGE = "FILE_TOO_LARGE"
+    CONFLICT = "CONFLICT"
+    QUEUE_UNAVAILABLE = "QUEUE_UNAVAILABLE"

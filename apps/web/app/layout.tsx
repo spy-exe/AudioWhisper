@@ -10,6 +10,7 @@ import { MotionPreferences } from "@/components/ui/MotionPreferences";
 
 import "./globals.css";
 import "./workspace.css";
+import "./motion.css";
 
 const heading = localFont({
   src: "../node_modules/@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2",
@@ -23,7 +24,7 @@ const body = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "AudioWhisper 2.0 · Studio",
+  title: "AudioWhisper 2.1 · Studio",
   description:
     "Gravação, transcrição e organização de áudio no seu computador.",
 };

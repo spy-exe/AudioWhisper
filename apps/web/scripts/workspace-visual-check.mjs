@@ -15,7 +15,7 @@ try {
   const projects = await (await page.request.get(base + '/api/projects?q=QA%20Workspace%20chromium&limit=100')).json();
   const fixtureHash = createHash('sha256').update(await readFile(new URL('../tests/e2e/fixtures/meeting.wav', import.meta.url))).digest('hex');
   let selected;
-  for (const project of projects.items.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))) {
+  for (const project of projects.items.sort((a, b) => String(b.last_activity).localeCompare(String(a.last_activity)))) {
     const runs = await (await page.request.get(base + '/api/recipe-runs?project=' + encodeURIComponent(project.name))).json();
     const tasks = await (await page.request.get(base + '/api/tasks?project=' + encodeURIComponent(project.name))).json();
     if (!runs.items.some(run => run.status === 'completed') || tasks.total <= 1) continue;
@@ -60,7 +60,7 @@ try {
       if (name === 'knowledge') await page.waitForFunction(() => [...document.querySelectorAll('main select option')].some(el => el.textContent === 'qwen3:4b'));
       const layout = await page.evaluate(() => {
         const visible = el => !!el.getBoundingClientRect().width && getComputedStyle(el).visibility !== 'hidden';
-        const fields = [...document.querySelectorAll('main input,main select,main textarea')].filter(visible);
+        const fields = [...document.querySelectorAll('main input:not([type="checkbox"], [type="radio"], [type="range"]),main select,main textarea')].filter(visible);
         const controls = [...document.querySelectorAll('main button,main select,main input')].filter(visible);
         return { width: innerWidth, scrollWidth: document.documentElement.scrollWidth, bodyFont: parseFloat(getComputedStyle(document.body).fontSize), minField: fields.length ? Math.min(...fields.map(el => parseFloat(getComputedStyle(el).fontSize))) : null, minControl: controls.length ? Math.min(...controls.map(el => Math.min(el.getBoundingClientRect().width, el.getBoundingClientRect().height))) : null };
       });
