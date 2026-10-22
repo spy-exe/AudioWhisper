@@ -68,5 +68,6 @@ test("exporting SRT triggers a download", async ({ page }) => {
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "SRT" }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toContain("transcript");
+  // Named after the recording (speech.wav), not a generic "transcript.srt".
+  expect(download.suggestedFilename()).toBe("speech.srt");
 });

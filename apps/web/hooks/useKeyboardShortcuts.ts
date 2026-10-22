@@ -18,6 +18,7 @@ export interface ShortcutHandlers {
   help?: () => void;
 }
 
+/** Fields and selects consume every key (typing, type-ahead). */
 function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   const tag = target.tagName;
@@ -25,8 +26,14 @@ function isTypingTarget(target: EventTarget | null): boolean {
     tag === "INPUT" ||
     tag === "TEXTAREA" ||
     target.isContentEditable ||
-    !!target.closest("button, a, select, summary")
+    !!target.closest("select")
   );
+}
+
+/** Buttons, links and summaries only own their activation keys; letters stay shortcuts, so
+ * after clicking a toolbar button J/L/M keep working. */
+function isActivationTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && !!target.closest("button, a, summary, [role='tab']");
 }
 
 function insideDialog(target: EventTarget | null): boolean {
@@ -65,6 +72,7 @@ export function useKeyboardShortcuts(
       }
 
       if (typing) return;
+      if ((e.key === " " || e.key === "Enter") && isActivationTarget(e.target)) return;
 
       if (ctrlOrCmd && !e.shiftKey && e.key.toLowerCase() === "z") {
         if (h.undo) {

@@ -77,10 +77,10 @@ jobs:
         include:
           - service: api
             coverage: '--cov=apps/api/app --cov=packages/core/src/audiowhisper_core'
-            threshold: 88
+            threshold: 95
           - service: worker
             coverage: '--cov=apps/worker/app'
-            threshold: 65
+            threshold: 90
     services:
       redis:
         image: redis:7-alpine

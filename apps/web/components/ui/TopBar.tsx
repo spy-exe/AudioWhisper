@@ -31,7 +31,7 @@ export function TopBar() {
           <Link
             href="/"
             className="brand-link"
-            aria-label="AudioWhisper 2.0 — Studio"
+            aria-label="AudioWhisper 2.1 — Studio"
           >
             <span className="brand-mark">
               <Icon name="studio" />
@@ -39,7 +39,7 @@ export function TopBar() {
             <span className="brand-title">
               AudioWhisper{" "}
               <span className="brand-version">
-                STUDIO 2.0
+                STUDIO 2.1
               </span>
             </span>
           </Link>

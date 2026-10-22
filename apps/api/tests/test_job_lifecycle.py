@@ -52,6 +52,23 @@ def test_active_jobs_cannot_be_deleted(client, make_completed_job):
     assert client.delete("/api/jobs/nao-existe").status_code == 404
 
 
+def test_recordings_with_derived_work_in_progress_cannot_be_deleted(client, make_completed_job):
+    diarizing = make_completed_job([("Texto", 0, 1)], title="Falantes")
+    with session_scope() as db:
+        db.get(WorkspaceItem, diarizing["job_id"]).diarization_status = "processing"
+    response = client.delete(f"/api/jobs/{diarizing['job_id']}")
+    assert response.status_code == 409 and "identificação de falantes" in response.json()["error"]["message"]
+
+    documenting = make_completed_job([("Texto", 0, 1)])
+    with session_scope() as db:
+        db.add(AIDocument(job_id=documenting["job_id"], kind="summary", model="m", status="generating", source_hash="h"))
+    response = client.delete(f"/api/jobs/{documenting['job_id']}")
+    assert response.status_code == 409 and "geração do documento" in response.json()["error"]["message"]
+    with session_scope() as db:
+        db.query(AIDocument).filter_by(job_id=documenting["job_id"]).update({"status": "failed"})
+    assert client.delete(f"/api/jobs/{documenting['job_id']}").status_code == 204
+
+
 def test_retranscribe_creates_a_new_run_and_copies_organization(client, make_completed_job):
     job = make_completed_job([("Original", 0, 1)], title="Diretoria", folder="Reuniões", tags=["q4"], speakers={"S1": "Ana"})
     response = client.post(f"/api/jobs/{job['job_id']}/retranscribe",

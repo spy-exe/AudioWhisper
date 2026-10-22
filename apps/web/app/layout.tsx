@@ -14,7 +14,7 @@ const heading = localFont({ src: "../node_modules/@fontsource-variable/manrope/f
 const body = localFont({ src: "../node_modules/@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2", variable: "--font-body", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "AudioWhisper 2.0 — Studio",
+  title: "AudioWhisper 2.1 — Studio",
   description:
     "Inteligência local sobre áudio: transcrição, revisão e informação pronta para ação.",
 };

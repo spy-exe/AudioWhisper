@@ -44,7 +44,7 @@ it("shows the editor for a completed job and progress in the tab title while pro
   expect(await screen.findByText("editor turbo")).toBeInTheDocument();
   expect(document.title).toBe("reuniao.wav — AudioWhisper");
   view.unmount();
-  expect(document.title).toBe("AudioWhisper 2.0 — Studio");
+  expect(document.title).toBe("AudioWhisper 2.1 — Studio");
 });
 
 it("reports a missing job", async () => {

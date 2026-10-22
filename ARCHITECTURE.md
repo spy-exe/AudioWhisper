@@ -102,7 +102,9 @@ contexto WebGL. A identidade, os tamanhos de texto e as regras responsivas estã
 
 Ver `packages/core/src/audiowhisper_core/models.py` para as definições completas (SQLAlchemy
 2.0). Entidades: `MediaFile`, `TranscriptionJob`, `TranscriptSegment`, `ExportFile`,
-`ApplicationSettings`. Migração inicial gerada via `alembic revision --autogenerate` a partir
+`ApplicationSettings` e, a partir do Studio 2.0/2.1, `WorkspaceItem`, `AIDocument`, `DocumentShare`,
+`DocumentDelivery`, `LiveSession`, `LiveChunk` e `Bookmark`. A conexão SQLite registra a função
+`aw_fold` (dobra de acentos e maiúsculas) usada pela busca; ver [STUDIO_2.md](STUDIO_2.md#studio-21--revisão-e-busca). Migração inicial gerada via `alembic revision --autogenerate` a partir
 desses modelos (`packages/core/migrations/versions/`).
 
 ## Estrutura de diretórios

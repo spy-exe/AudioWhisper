@@ -1,8 +1,14 @@
-# AudioWhisper 2.0
+# AudioWhisper 2.1
 
 Studio local de inteligência sobre áudio: captura ao vivo, transcrição com GPU, biblioteca pesquisável,
-editor com falantes e documentos com IA local. Exporta em sete formatos e compartilha documentos
-após revisão explícita. Processamento via Docker Compose, com e-mail e WhatsApp opcionais.
+editor com falantes e documentos com IA local. Exporta em oito formatos (ou tudo de uma vez em ZIP) e
+compartilha documentos após revisão explícita. Processamento via Docker Compose, com e-mail e WhatsApp
+opcionais.
+
+**Novo na 2.1** ([detalhes](CHANGELOG.md)): busca por cada momento em que algo foi dito, sem acentos;
+insights da conversa; revisão de trechos incertos; marcadores; dividir e juntar segmentos;
+participantes manuais; vocabulário personalizado; nova transcrição com outro modelo; CSV e ZIP;
+ações em lote na biblioteca; armazenamento e fila visíveis; tempo restante e aviso ao concluir.
 
 ![Studio com captura e importação](docs/screenshots/studio-desktop.png)
 
@@ -80,8 +86,11 @@ docker compose logs -f --tail=200
 4. Acompanhe o progresso em tempo real. Na primeira transcrição com um modelo novo, o download do
    modelo (Hugging Face) acontece uma vez e fica em cache no volume `model_cache` — restarts
    subsequentes não baixam de novo.
-5. Ao concluir, edite a transcrição, use a waveform para navegar, pesquise/substitua texto e
-   exporte em PDF, DOCX, TXT, Markdown, JSON, SRT ou VTT.
+5. Ao concluir, edite a transcrição, use a waveform para navegar, pesquise/substitua texto,
+   revise os trechos incertos (`N`), marque momentos (`M`), veja os insights e exporte em PDF, DOCX,
+   TXT, Markdown, JSON, SRT, VTT, CSV ou tudo em ZIP. `?` lista os atalhos.
+6. Encontre depois qualquer fala em **Buscar** (cabeçalho ou `/search`): o resultado abre o editor
+   no instante exato.
 
 ## Onde ficam os dados
 
@@ -92,7 +101,7 @@ restarts; só são removidos com `docker compose down -v`, o que nunca é feito 
 |---|---|
 | `db_data` | banco SQLite (`audiowhisper.db`, modo WAL) |
 | `uploads_data` | arquivos de mídia originais enviados |
-| `exports_data` | arquivos exportados (TXT/MD/JSON/SRT/VTT) |
+| `exports_data` | arquivos exportados (regeneráveis; podem ser limpos em Configurações → Armazenamento) |
 | `model_cache` | modelos faster-whisper baixados (Hugging Face) |
 | `tmp_data` | áudio intermediário do ffmpeg — limpo automaticamente após cada job |
 | `redis_data` | fila de jobs (AOF) |

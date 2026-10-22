@@ -397,7 +397,9 @@ kbd { display: inline-block; min-width: 1.8em; margin-right: 4px; padding: 2px 7
 .queue-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-accent); animation: queue-pulse 1.6s ease-in-out infinite; }
 .queue-warning .queue-dot { background: var(--color-warning); animation: none; }
 @keyframes queue-pulse { 50% { opacity: .35; } }
-@media (max-width: 639px) { .queue-pill { padding: 6px 10px; font-size: 13px; } }
+.queue-count { display: none; font-variant-numeric: tabular-nums; }
+/* Narrow headers keep the brand: the pill becomes dot + count, the full text stays in its name. */
+@media (max-width: 639px) { .queue-pill { padding: 6px 10px; font-size: 13px; } .queue-label { display: none; } .queue-count { display: inline; } }
 
 /* ---- Settings ---- */
 .settings-feedback { margin-top: 20px; padding: 12px 16px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); font-size: 15px; }

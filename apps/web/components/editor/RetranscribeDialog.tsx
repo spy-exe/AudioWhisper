@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { api, describeError } from "@/lib/api";
 import { LANGUAGE_OPTIONS, MODEL_OPTIONS } from "@/lib/constants";
+import { signalQueueChanged } from "@/lib/events";
 import { transcriptionSettingsFrom } from "@/lib/transcription-settings";
 import { useSettings } from "@/contexts/SettingsContext";
 import { Button } from "@/components/ui/Button";
@@ -51,6 +52,7 @@ export function RetranscribeDialog({ open, jobId, currentModel, onClose }: Retra
                 initial_prompt: vocabulary.trim() || null,
               }),
             );
+            signalQueueChanged();
             router.push(`/jobs/${job.id}`);
           } catch (failure) {
             setError(describeError(failure, "Não foi possível iniciar a nova transcrição."));

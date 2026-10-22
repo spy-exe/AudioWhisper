@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from audiowhisper_core.config import Settings
 from audiowhisper_core.enums import ErrorCode, JobStatus, TERMINAL_STATUSES
 from audiowhisper_core.errors import AppError, ConflictError, NotFoundError, QueueUnavailableError, ValidationAppError
-from audiowhisper_core.models import Bookmark, MediaFile, TranscriptionJob, TranscriptSegment, LiveSession, WorkspaceItem
+from audiowhisper_core.models import AIDocument, Bookmark, MediaFile, TranscriptionJob, TranscriptSegment, LiveSession, WorkspaceItem
 from audiowhisper_core.schemas import JobCreateIn, TranscriptionSettingsIn
 
 from app.queue import enqueue_transcription, get_redis_connection
@@ -142,6 +142,13 @@ def retranscribe(db: Session, settings: Settings, job: TranscriptionJob, setting
 def delete_job(db: Session, settings: Settings, job: TranscriptionJob) -> None:
     if job.status not in TERMINAL_STATUSES:
         raise ConflictError("Cancele o processamento antes de excluir esta gravação.")
+    # Derived work still running in the worker would lose its rows mid-way.
+    item = db.get(WorkspaceItem, job.id)
+    if item and item.diarization_status in ("queued", "processing"):
+        raise ConflictError("Aguarde a identificação de falantes terminar antes de excluir esta gravação.")
+    if db.scalar(select(func.count()).select_from(AIDocument).where(
+            AIDocument.job_id == job.id, AIDocument.status.in_(["queued", "generating"]))):
+        raise ConflictError("Aguarde a geração do documento terminar antes de excluir esta gravação.")
     media = db.get(MediaFile, job.media_file_id)
     job_id = job.id
     db.delete(job)

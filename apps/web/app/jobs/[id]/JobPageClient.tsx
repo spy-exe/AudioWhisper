@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { api } from "@/lib/api";
+import { signalQueueChanged } from "@/lib/events";
 import { notifyJobFinished, progressTitle } from "@/lib/notifications";
 import type { MediaFile, TranscriptionJob } from "@/lib/types";
 import { isTerminal, useJobProgress } from "@/hooks/useJobProgress";
@@ -12,7 +13,7 @@ import { JobErrorView } from "@/components/jobs/JobErrorView";
 import { ProcessingView } from "@/components/jobs/ProcessingView";
 import { TranscriptEditor } from "@/components/editor/TranscriptEditor";
 
-const DEFAULT_TITLE = "AudioWhisper 2.0 — Studio";
+const DEFAULT_TITLE = "AudioWhisper 2.1 — Studio";
 
 export function JobPageClient({ jobId }: { jobId: string }) {
   const [attempt, setAttempt] = useState(0);
@@ -46,8 +47,10 @@ export function JobPageClient({ jobId }: { jobId: string }) {
     else document.title = `${name} — AudioWhisper`;
     const previous = previousStatus.current;
     previousStatus.current = job.status;
-    if (previous && !isTerminal(previous) && isTerminal(job.status) && settings?.notifications_enabled)
-      notifyJobFinished(name, job.status);
+    if (previous && !isTerminal(previous) && isTerminal(job.status)) {
+      signalQueueChanged();
+      if (settings?.notifications_enabled) notifyJobFinished(name, job.status);
+    }
   }, [job, media, settings?.notifications_enabled]);
 
   useEffect(() => () => {
@@ -71,6 +74,7 @@ export function JobPageClient({ jobId }: { jobId: string }) {
       <JobErrorView
         job={job}
         onRetried={(next) => {
+          signalQueueChanged();
           previousStatus.current = next.status;
           setInitialJob(next);
           setAttempt((n) => n + 1);

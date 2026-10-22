@@ -6,6 +6,7 @@ import { useState } from "react";
 import { api, describeError } from "@/lib/api";
 import { LANGUAGE_OPTIONS, MODEL_OPTIONS } from "@/lib/constants";
 import { formatBytes, formatDuration } from "@/lib/format";
+import { signalQueueChanged } from "@/lib/events";
 import { transcriptionSettingsFrom } from "@/lib/transcription-settings";
 import type { AppSettings, MediaFile } from "@/lib/types";
 
@@ -44,6 +45,7 @@ export function UploadQueueItem({ item, appSettings, onRemove }: UploadQueueItem
         item.media.id,
         transcriptionSettingsFrom(appSettings, { model_name: model, language: language || null }),
       );
+      signalQueueChanged();
       router.push(`/jobs/${job.id}`);
     } catch (err) {
       setStartError(describeError(err, "Falha ao iniciar transcrição. Tente novamente."));

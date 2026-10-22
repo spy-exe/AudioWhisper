@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
+import { QUEUE_CHANGED } from "@/lib/events";
 import type { QueueStatus } from "@/lib/types";
 
 const POLL_MS = 8000;
@@ -28,18 +29,21 @@ export function QueueIndicator() {
     load();
     const timer = setInterval(load, POLL_MS);
     document.addEventListener("visibilitychange", load);
+    window.addEventListener(QUEUE_CHANGED, load);
     return () => {
       active = false;
       clearInterval(timer);
       document.removeEventListener("visibilitychange", load);
+      window.removeEventListener(QUEUE_CHANGED, load);
     };
   }, []);
 
   if (!status) return null;
   if (status.error)
     return (
-      <span role="status" className="queue-pill queue-warning">
-        Fila indisponível
+      <span role="status" className="queue-pill queue-warning" aria-label="Fila indisponível">
+        <span aria-hidden="true" className="queue-dot" />
+        <span className="queue-label">Fila indisponível</span>
       </span>
     );
   const busy = status.active_count + status.pending_documents;
@@ -56,7 +60,8 @@ export function QueueIndicator() {
       title={status.active_jobs[0] ? `Agora: ${status.active_jobs[0].title}` : undefined}
     >
       <span aria-hidden="true" className="queue-dot" />
-      {label}
+      <span className="queue-count" aria-hidden="true">{busy}</span>
+      <span className="queue-label" aria-hidden="true">{label}</span>
     </Link>
   );
 }

@@ -5,6 +5,7 @@ import { QueueIndicator } from "@/components/jobs/QueueIndicator";
 import { StoragePanel } from "@/components/settings/StoragePanel";
 import { useKeyboardShortcuts, type ShortcutHandlers } from "@/hooks/useKeyboardShortcuts";
 import { api, ApiError } from "@/lib/api";
+import { signalQueueChanged } from "@/lib/events";
 import type { QueueStatus, StorageInfo } from "@/lib/types";
 
 afterEach(() => {
@@ -30,6 +31,15 @@ it("shows what the engine is processing and refreshes on an interval", async () 
   expect(screen.queryByRole("link")).not.toBeInTheDocument();
 });
 
+it("refreshes at once when a job starts or finishes on this page", async () => {
+  const load = vi.spyOn(api, "queue").mockResolvedValueOnce(queue()).mockResolvedValue(queue({ active_count: 0, active_jobs: [] }));
+  render(<QueueIndicator />);
+  expect(await screen.findByRole("link", { name: /2 em processamento/ })).toBeVisible();
+  act(() => signalQueueChanged());
+  await waitFor(() => expect(screen.queryByRole("link")).not.toBeInTheDocument());
+  expect(load).toHaveBeenCalledTimes(2);
+});
+
 it("warns about a stalled engine and an unavailable queue", async () => {
   vi.spyOn(api, "queue").mockResolvedValueOnce(queue({ worker_online: false, pending_documents: 1 }));
   const { unmount } = render(<QueueIndicator />);
@@ -37,7 +47,7 @@ it("warns about a stalled engine and an unavailable queue", async () => {
   unmount();
   vi.spyOn(api, "queue").mockResolvedValueOnce(queue({ error: "Redis indisponível" }));
   render(<QueueIndicator />);
-  expect(await screen.findByRole("status")).toHaveTextContent("Fila indisponível");
+  expect(await screen.findByRole("status", { name: "Fila indisponível" })).toBeVisible();
 });
 
 it("stays hidden when the queue cannot be read", async () => {
@@ -100,6 +110,8 @@ function Shortcuts(props: ShortcutHandlers) {
   return (
     <>
       <textarea aria-label="campo" />
+      <button>botão da barra</button>
+      <select aria-label="opções"><option>Ana</option></select>
       <div aria-modal="true"><button>dentro do diálogo</button></div>
     </>
   );
@@ -132,6 +144,14 @@ it("routes editor shortcuts and respects fields and dialogs", () => {
   expect(handlers.bookmark).toHaveBeenCalledTimes(1);
   expect(handlers.undo).toHaveBeenCalledTimes(1);
   expect(handlers.save).toHaveBeenCalledTimes(1);
+
+  const button = screen.getByRole("button", { name: "botão da barra" });
+  fireEvent.keyDown(button, { key: "m" });
+  fireEvent.keyDown(button, { key: " " });
+  expect(handlers.bookmark).toHaveBeenCalledTimes(2);
+  expect(handlers.togglePlay).not.toHaveBeenCalled();
+  fireEvent.keyDown(screen.getByRole("combobox", { name: "opções" }), { key: "m" });
+  expect(handlers.bookmark).toHaveBeenCalledTimes(2);
 
   fireEvent.keyDown(screen.getByRole("button", { name: "dentro do diálogo" }), { key: "f", ctrlKey: true });
   expect(handlers.search).not.toHaveBeenCalled();
