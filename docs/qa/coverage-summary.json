@@ -1,30 +1,30 @@
 {
-  "date": "2026-10-21",
+  "date": "2026-10-22",
   "web": {
-    "tests": 71,
+    "tests": 99,
     "lines": {
-      "total": 1769,
-      "covered": 956,
+      "total": 2391,
+      "covered": 1419,
       "skipped": 0,
-      "pct": 54.04
+      "pct": 59.34
     },
     "statements": {
-      "total": 1979,
-      "covered": 1029,
+      "total": 2621,
+      "covered": 1506,
       "skipped": 0,
-      "pct": 51.99
+      "pct": 57.45
     },
     "functions": {
-      "total": 571,
-      "covered": 246,
+      "total": 863,
+      "covered": 429,
       "skipped": 0,
-      "pct": 43.08
+      "pct": 49.71
     },
     "branches": {
-      "total": 1338,
-      "covered": 691,
+      "total": 1947,
+      "covered": 1109,
       "skipped": 0,
-      "pct": 51.64
+      "pct": 56.95
     },
     "branchesTrue": {
       "total": 0,
@@ -37,47 +37,55 @@
         "lines": 91.04,
         "branches": 66.66
       },
+      "components/live/WindowsCapture.tsx": {
+        "lines": 92.95,
+        "branches": 85.05
+      },
       "components/ui/AuthGate.tsx": {
         "lines": 100,
         "branches": 93.75
       },
       "components/workspace/AIWorkspace.tsx": {
-        "lines": 88.05,
-        "branches": 77.35
+        "lines": 88.4,
+        "branches": 78.18
       },
       "components/workspace/DocumentView.tsx": {
-        "lines": 86.66,
-        "branches": 93.87
+        "lines": 89.47,
+        "branches": 92.72
+      },
+      "hooks/useWorkspaceResource.ts": {
+        "lines": 98.46,
+        "branches": 79.31
+      },
+      "lib/capture-wake-lock.ts": {
+        "lines": 100,
+        "branches": 81.25
       },
       "lib/live-audio.ts": {
         "lines": 97.91,
         "branches": 85.24
       },
-      "components/live/WindowsCapture.tsx": {
-        "lines": 89.65,
-        "branches": 80.23
-      },
-      "lib/capture-wake-lock.ts": {
+      "lib/workspace-api.ts": {
         "lines": 100,
-        "branches": 81.25
+        "branches": 100
       }
     }
   },
   "backend": {
     "api": {
-      "tests": 70,
+      "tests": 97,
       "lines": {
-        "covered": 1653,
-        "total": 1862,
-        "pct": 88.78
+        "covered": 2276,
+        "total": 2516,
+        "pct": 90.46
       }
     },
     "worker": {
-      "tests": 32,
+      "tests": 38,
       "lines": {
-        "covered": 435,
-        "total": 656,
-        "pct": 66.31
+        "covered": 562,
+        "total": 806,
+        "pct": 69.73
       }
     },
     "windowsCapture": {

@@ -1,6 +1,6 @@
 # Expansão do workspace
 
-Mapa aprovado pelo pedido de continuar com tudo entregue. Implementação incremental com contratos e testes por módulo.
+Implementação modular com contratos e testes por módulo; mapa em `CAPABILITY-MAP.md`.
 
 1. Persistência e API de projetos, preservando nomes atuais.
 2. Busca por segmentos e navegação para timestamp.

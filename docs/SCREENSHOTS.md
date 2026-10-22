@@ -24,7 +24,7 @@ Capturador em processo separado com entrada sintética. O histórico pessoal foi
 
 ![Biblioteca](screenshots/library-desktop.png)
 
-## Editor e assistente
+## Editor e documentos
 
 ![Editor e documento no desktop](screenshots/workspace-desktop.png)
 
@@ -34,6 +34,34 @@ Capturador em processo separado com entrada sintética. O histórico pessoal foi
 
 ![Configurações](screenshots/settings-desktop.png)
 
+## Central e organização
+
+![Central de trabalho](screenshots/central-desktop.png)
+
+![Projetos](screenshots/projects-desktop.png)
+
+![Projeto e gravações](screenshots/project-desktop.png)
+
+![Criação de projeto sob demanda](screenshots/project-create-expanded.png)
+
+## Busca e tarefas
+
+![Busca por trechos](screenshots/search-desktop.png)
+
+![Quadro de tarefas](screenshots/tasks-desktop.png)
+
+![Tarefas no celular com filtros recolhidos](screenshots/tasks-mobile.png)
+
+## Caderno, consultas e modelos
+
+![Caderno](screenshots/notebook-desktop.png)
+
+![Consultas às gravações](screenshots/knowledge-desktop.png)
+
+![Modelos de documento](screenshots/recipes-desktop.png)
+
+![Navegação por comandos](screenshots/commands-open.png)
+
 ## Estados de recuperação
 
 ![Erro recuperável da biblioteca](screenshots/library-error.png)
@@ -42,4 +70,4 @@ Capturador em processo separado com entrada sintética. O histórico pessoal foi
 
 ![Carregamento](screenshots/library-loading.png)
 
-A matriz completa de seis larguras e as medições são produzidas por `npm run test:visual`. Veja [VALIDATION.md](../VALIDATION.md) e o [relatório visual](qa/visual-report.json).
+As matrizes de seis larguras são produzidas por `npm run test:visual` e `npm run test:visual:workspace`. Veja [VALIDATION.md](../VALIDATION.md) e o [relatório do Studio](qa/visual-report.json) e o [relatório das ferramentas](qa/workspace-visual-report.json).

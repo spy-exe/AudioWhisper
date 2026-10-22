@@ -1,7 +1,7 @@
 ---
 version: alpha
 name: AudioWhisper Studio
-description: Um estúdio de áudio expressivo, legível e orientado à revisão.
+description: Gravação, transcrição e organização de áudio com foco na tarefa.
 colors:
   background: '#0c1220'
   surface: '#141e30'
@@ -33,38 +33,81 @@ spacing:
   page-max: '95rem'
   section-gap: '2.25rem'
 components:
-  button: {}
-  panel: {}
-  navigation: {}
-  transcript: {}
-  document: {}
+  button:
+    backgroundColor: '{colors.primary}'
+    textColor: '{colors.background}'
+    rounded: '{rounded.md}'
+  secondary-button:
+    backgroundColor: '{colors.interactive}'
+    textColor: '{colors.text}'
+  panel:
+    backgroundColor: '{colors.surface}'
+    textColor: '{colors.text}'
+  raised-panel:
+    backgroundColor: '{colors.raised}'
+    textColor: '{colors.secondary}'
+  navigation:
+    backgroundColor: '{colors.surface}'
+    textColor: '{colors.secondary}'
+  transcript:
+    backgroundColor: '{colors.background}'
+    textColor: '{colors.text}'
+    typography: '{typography.sans}'
+  document:
+    backgroundColor: '{colors.background}'
+    textColor: '{colors.text}'
+  metadata:
+    textColor: '{colors.muted}'
+  capture:
+    textColor: '{colors.amber}'
+  project-marker:
+    textColor: '{colors.violet}'
+  success-badge:
+    textColor: '{colors.success}'
+  warning-badge:
+    textColor: '{colors.warning}'
+  error-message:
+    textColor: '{colors.danger}'
+  field:
+    backgroundColor: '{colors.surface}'
+    textColor: '{colors.text}'
+    rounded: '{rounded.md}'
+
 ---
 
 # AudioWhisper Studio
 
 ## Overview
 
-Uma bancada de produção sonora para transformar conversas em informação verificável. Azul profundo, luz âmbar e linhas espectrais dão identidade ao produto. A assinatura visual parte do áudio: ondas, timestamps, medidores e referências ao trecho original. A composição deve ter presença sem competir com a leitura da transcrição. Português do Brasil; datas no fuso do navegador e duração independente de fuso.
+O AudioWhisper é uma ferramenta de trabalho com áudio. Cada tela apresenta uma tarefa identificável: gravar, localizar uma gravação, revisar texto, acompanhar tarefas ou preparar documentos. A hierarquia vem de títulos, espaçamento, tipografia e dados reais. Evitar slogans, chamadas promocionais, ilustrações de preenchimento e ícones de brilho para representar funções. Português do Brasil; datas no fuso do navegador e duração independente de fuso.
+
+A navegação usa nomes concretos. A central apresenta gravações recentes e prazos. O Studio começa nos controles de gravação e importação, sem uma abertura promocional. Não usar travessões nos rótulos da interface. A marca possui um ícone próprio em SVG, também utilizado como favicon.
 
 ## Colors
 
-Azul gelo indica ações e navegação. Âmbar destaca a captura; violeta e verde-água compõem a ilustração sonora. Superfícies em três níveis separam página, painel e controles. Verde significa concluído, amarelo indica pendência e rosa sinaliza falha. Estados sempre têm rótulos além da cor. Gradientes são discretos, com bordas e reflexos de baixa intensidade.
+Azul gelo indica ações e navegação. Âmbar destaca a captura; os demais acentos identificam projetos e estados. Superfícies em três níveis separam página, painel e controles. Verde significa concluído, amarelo indica pendência e rosa sinaliza falha. Estados sempre têm rótulos além da cor. Cor e contraste indicam prioridade; evitar fundos decorativos que concorram com o conteúdo.
 
 ## Typography
 
-Manrope nos títulos e IBM Plex Sans no conteúdo, ambas variáveis e hospedadas junto à aplicação. Corpo de 17px; controles e texto secundário de 16px; metadados de 14px; transcrição de 19px com entrelinha de 1,7. Títulos de página de 30–36px, abertura do Studio de 34–48px. Timestamps usam fonte mono e números tabulares. Somente marca e ilustração decorativa podem usar tamanhos menores. Não reduzir a fonte para resolver problemas de layout: empilhar controles ou permitir quebra.
+Manrope nos títulos e IBM Plex Sans no conteúdo, ambas variáveis e hospedadas junto à aplicação. Corpo de 17px; controles e texto secundário de 16px; metadados de 14px; transcrição de 19px com entrelinha de 1,7. Títulos de página de 30 a 36px, inclusive no Studio. Timestamps usam fonte mono e números tabulares. Somente o complemento da marca pode usar tamanho menor. Não reduzir a fonte para resolver problemas de layout: empilhar controles ou permitir quebra.
 
 ## Layout
 
-Sidebar de 248px a partir de 1024px, cabeçalho de 88px. Em telas estreitas, navegação superior com três destinos e áreas de toque amplas. Studio limitado a 1520px com respiro de 36px no desktop e 18px no celular. Captura e importação lado a lado a partir de 1280px; abaixo disso, empilhadas. Editor e assistente usam dois painéis onde houver espaço. O documento controla a rolagem da página; transcrição, fontes e prévia podem ter rolagem interna limitada. Nenhum fluxo depende de hover.
+Sidebar de 248px a partir de 1024px, cabeçalho de 88px. A sidebar acomoda os dez destinos com fonte de 16px, controles de pelo menos 40px e rolagem própria em telas baixas. Em telas estreitas, navegação com Central, Studio, Biblioteca e Mais; o último abre todas as ferramentas em diálogo. Studio limitado a 1520px e workspace a 1560px, com respiro de 36px no desktop e 18px no celular. Captura e importação lado a lado a partir de 1280px; abaixo disso, empilhadas. Editor e documentos usam dois painéis onde houver espaço. O documento controla a rolagem da página; transcrição, fontes e prévia podem ter rolagem interna limitada. Nenhum fluxo depende de hover. Quadro de tarefas vira uma sequência de colunas em telas estreitas; a alternativa de lista mantém todas as ações sem exigir arrastar.
 
 ## Elevation & Depth
 
-Painéis com bordas tonais, reflexo interno e sombras suaves. A arte espectral é SVG leve, animada com transform e opacity. Não há cena WebGL decorativa na abertura. O movimento ambiente dura 12s; feedback de interação usa 150–250ms. O sistema operacional ou a opção de desativar efeitos interrompem movimentos ambientes, pulsos e transições, preservando indicadores textuais de estado. Skeletons reservam a geometria de carregamento.
+Painéis com bordas tonais e superfícies discretas. Não há animação ambiente ou arte decorativa no Studio e na central. Feedback de hover, foco e expansão usa 150 a 250ms. O sistema operacional ou a opção de desativar efeitos interrompem transições, preservando os estados finais e indicadores textuais. Skeletons reservam a geometria de carregamento. Projetos usam monogramas e quatro acentos.
+
+## Divulgação progressiva
+
+Coleções aparecem antes dos formulários. Novo projeto, nova tarefa, novo modelo e registro no caderno usam recolhíveis nativos com rótulos específicos. Fechar e reabrir preserva os campos. Filtros secundários ficam recolhidos; o resumo indica a quantidade de filtros aplicados. Modelo de processamento, configuração de dispositivos e automação ficam em opções secundárias; erros relevantes continuam visíveis junto à ação principal. Gravação, fonte de áudio, transcrição, tarefas e fontes verificáveis não dependem de abrir ajuda.
+
+Referências: [Nielsen Norman Group, Progressive Disclosure](https://www.nngroup.com/articles/progressive-disclosure/) e [GOV.UK Design System, Details](https://design-system.service.gov.uk/components/details/). Recolher somente informações secundárias, sem esconder o que a maioria precisa para executar a tarefa.
 
 ## Shapes
 
-Painéis principais de 20px; campos e botões de 10–12px; símbolos de 14–16px. Botões principais têm altura mínima de 48px, campos de 46px e ações compactas de 40px. Ícones de 20–24px nas ações principais. Fundo, forma e rótulo revelam a prioridade da ação.
+Painéis principais de 14px; campos e botões de 10–12px; símbolos de 14–16px. Botões principais têm altura mínima de 48px, campos de 46px e ações compactas de 40px. Ícones de 20–24px nas ações principais. Fundo, forma e rótulo revelam a prioridade da ação.
 
 ## Components
 

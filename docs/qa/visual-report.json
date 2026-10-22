@@ -244,7 +244,9 @@
   "states": [
     "library-error",
     "library-empty",
-    "library-loading"
+    "library-loading",
+    "document-preview-keyboard-scroll",
+    "document-preview-keyboard-focus"
   ],
   "audits": [
     {
@@ -260,8 +262,8 @@
   ],
   "motion": {
     "samples": 120,
-    "medianMs": 16.700000000000045,
-    "p95Ms": 33.40000000000009,
+    "medianMs": 16.699999999999932,
+    "p95Ms": 16.700000000000273,
     "framesOver50Ms": 0
   },
   "errors": [],

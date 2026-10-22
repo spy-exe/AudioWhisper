@@ -1,92 +1,63 @@
-# Validação — 21/10/2026
+# Validação: 22/10/2026
 
-QA local em Windows, Chromium desktop e emulação Pixel 7, com a aplicação de produção em Docker Compose. Transcrição real com faster-whisper `turbo`, CUDA/float16 e RTX 5060; documentos com Ollama `qwen3:4b`. Os testes de navegador usam áudio sintético. Capturas da biblioteca são filtradas pelo SHA-256 da reunião de teste; o modo Windows usa uma entrada sintética e oculta o histórico pessoal.
+Aplicação de produção em Docker Compose no Windows. Chromium desktop e emulação Pixel 7, faster-whisper `turbo` com CUDA/float16 na RTX 5060 e Ollama `qwen3:4b`. Os fluxos usam áudio sintético. As capturas públicas filtram os arquivos pelo SHA-256 da reunião de teste; ferramentas do workspace exibem somente um projeto sintético verificado.
 
 ## Resultados
 
 | Verificação | Resultado |
 |---|---|
-| API e núcleo compartilhado | 70 testes aprovados; cobertura de linhas 88,78% |
-| Worker | 32 testes aprovados; cobertura de linhas 66,31% |
-| Frontend | 71 testes aprovados; cobertura de linhas 54,04% |
+| API e núcleo | 97 testes aprovados; cobertura de linhas 90,46% |
+| Worker | 38 testes aprovados; cobertura de linhas 69,73% |
+| Frontend | 99 testes aprovados; cobertura de linhas 59,34% |
 | Capturador Windows | 26 testes aprovados; cobertura de linhas 77,88% |
-| Fluxos completos no Chromium desktop e Pixel 7 | 41 aprovados; caso exclusivo do capturador Windows dispensado no projeto mobile |
+| Fluxos completos | 51 cenários aprovados entre a suíte completa e o reteste dos dois casos de filtros; um caso exclusivo do Windows dispensado no projeto mobile |
 | TypeScript, ESLint e build de produção | Aprovados |
-| Auditoria npm das dependências de produção | Zero vulnerabilidades reportadas |
-| Studio, biblioteca, configurações e editor | 24 combinações em 320, 390, 768, 1024, 1440 e 1920px sem estouro horizontal |
-| Capturador Windows | Mais seis larguras, estados pronto/gravando e reconexão à mesma sessão após fechar o Chromium inteiro |
-| Estados visuais adicionais | Biblioteca carregando, busca sem resultados e erro recuperável |
-| Acessibilidade automatizada | Sem violações nos testes axe de Studio, biblioteca, configurações e editor |
-| Movimento | Mudança real entre frames, preferência do sistema e opção de desativar efeitos exercitadas |
+| Dependências de produção | Zero vulnerabilidades na auditoria npm |
+| QA visual | 72 combinações de telas e larguras sem estouro horizontal, além de seis larguras do capturador Windows |
+| Acessibilidade dos scripts visuais | 18 auditorias axe sem violações; verificações adicionais nos E2E de Studio, biblioteca, configurações e captura Windows |
+| Estados | Carregamento, vazio, erro, nova tentativa, hover, teclado, foco de diálogos e preservação de rascunhos |
+| Movimento | Expansão e feedback reais; preferência do sistema e efeitos desligados exercitados |
 
-Os testes de acessibilidade aplicam as regras WCAG A/AA disponíveis no axe; não substituem uma auditoria manual completa nem testes com leitores de tela. O modo Windows também passa por axe em 390, 1440 e 1920px. Cartões de fonte empilham no celular e os seletores têm pelo menos 24px.
+O fluxo completo percorre projeto, busca de fala, reprodução no timestamp, capítulo no caderno, tarefa, consulta local com fontes literais, modelo de documento, revisão e importação idempotente de ações. Também verifica nomes de projeto com acentos, porcentagem e barras, conflitos de revisão, falhas recuperáveis, exportação PDF/DOCX/SRT e revogação de links privados.
 
-A suíte completa passou em uma execução de 5,3 minutos. Depois da correção da afinidade de thread do WASAPI, os testes nativos e o cenário de fechar/reabrir o navegador foram repetidos com sucesso. Execute E2E sem análises pessoais concorrentes na mesma instalação.
+A gravação no navegador preserva trechos após falha de envio e recarregamento. O cenário Windows fecha o processo inteiro do Chromium, verifica a continuação do áudio sintético, reabre o Studio na mesma gravação e conclui a transcrição.
 
-O corpo foi medido em 17px, campos em pelo menos 16px e transcrição em 19px em todos os tamanhos. A amostra local de 120 frames com a arte espectral animada em 1440px registrou mediana de 16,7ms e percentil 95 de 33,4ms, sem frames acima de 50ms, durante QA concorrente. É uma medição desta máquina, sem simulação de hardware lento.
+## Revisão visual e teclado
 
-## Cobertura e limites
+Larguras: 320, 390, 768, 1024, 1440 e 1920px. Corpo de 17px, campos de pelo menos 16px e transcrição de 19px. A matriz inclui Studio, biblioteca, configurações, editor, central, projetos, detalhe de projeto, busca, tarefas, caderno, consultas e modelos.
 
-A cobertura contabiliza o código completo de cada escopo, incluindo rotas e componentes que também são exercitados pelo navegador. A cobertura de linhas dos testes de navegador não é somada à dos testes unitários. Há limites mínimos globais e por módulo no Vitest; o CI também exige pelo menos 88% para API/núcleo, 65% para worker e 75% para capturador Windows.
+Formulários secundários começam recolhidos e preservam o rascunho ao fechar e reabrir. Filtros mostram a quantidade aplicada e mantêm os valores na URL. Teclado, Escape, restauração de foco, seletores nativos e navegação mobile foram exercitados. A prévia de documento longo recebe foco e rola com PageDown. Os screenshots foram inspecionados para hierarquia, legibilidade e prioridade das ações.
 
-| Módulo | Cobertura de linhas |
+A amostra de renderização do Studio em 1440px registrou 120 frames, mediana de 16.7ms e percentil 95 de 16.7ms, sem frames acima de 50ms. Medição local, sem emulação de hardware lento. A interface não usa animações ambientes decorativas.
+
+Veja [as telas](docs/SCREENSHOTS.md), [o relatório do Studio](docs/qa/visual-report.json) e [o relatório das ferramentas](docs/qa/workspace-visual-report.json).
+
+## Cobertura
+
+| Módulo | Linhas |
 |---|---|
-| Captura/PCM/WAV no navegador | 97,91% |
-| Biblioteca | 91,04% |
-| Assistente de documentos | 88,05% |
-| Revisão e apresentação de documento | 86,66% |
-| Autenticação no frontend | 100% |
-| Recuperação do worker | 100% |
-| Pipeline de transcrição | 90% |
-| Diário e recuperação do capturador Windows | 94,66% |
+| Captura/PCM/WAV no navegador | 97.91% |
+| Biblioteca | 91.04% |
+| Documentos | 88.40% |
+| Revisão e fontes | 89.47% |
+| Controle da captura Windows | 92.95% |
+| Recursos do workspace | 98.46% |
+| Cliente do workspace | 100.00% |
 
-O resultado detalhado está em [coverage-summary.json](docs/qa/coverage-summary.json). O CI publica os relatórios completos como artefatos. A cobertura global do frontend ainda é parcial; há lacunas em upload, configurações e componentes de mídia na suíte unitária. Esses fluxos têm testes de navegador, sem equivalência automática a cobertura de linhas.
+A cobertura contabiliza todo o código de cada escopo. A cobertura de navegador não é somada à unitária. O CI exige 88% para API/núcleo, 65% para worker e 75% para capturador, além dos limites globais e por módulo do Vitest. O frontend ainda tem cobertura unitária parcial em upload, configurações e mídia; esses fluxos também possuem testes de navegador.
 
-O relatório do capturador inclui o ponto de entrada da bandeja, cuja interação não tem cobertura automatizada. Testes nativos cobrem persistência antes do envio, diário parcial após interrupção, arquivo danificado, falha de rede, mistura/resampling e preparação, uso e liberação de dispositivos na mesma thread. O smoke test WASAPI real recebeu 1,3s de amostras nos modos desktop e combinado, com proteção de suspensão ativa e recursos liberados, usando um destino em memória que não salva áudio pessoal. Veja o [guia do capturador](docs/WINDOWS_CAPTURE.md).
+O detalhamento está em [coverage-summary.json](docs/qa/coverage-summary.json). O workflow Quality publica os relatórios completos como artefatos.
 
-Community-1 não foi executado com o modelo autorizado nesta instalação. O cálculo de sobreposição temporal tem testes; a qualidade da diarização real ainda requer validação com o modelo. SMTP externo, OBS físico/entrada virtual e áudio de tela precisam de configuração e verificação no dispositivo. Os testes de SMTP usam substituto local e não enviam mensagens.
+## Limites verificados
 
-A árvore completa de ferramentas npm ainda reporta cinco alertas altos derivados de `braces`, utilizado pelo lint, sem versão corrigida disponível nesta data. As dependências de produção têm auditoria limpa. O alerta está registrado no [GitHub Advisory Database](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
+Os testes axe usam as regras WCAG A/AA disponíveis e não substituem avaliação com leitores de tela. A interação da bandeja Windows não tem automação. Os testes nativos cobrem diário em disco, interrupção, falha de rede, mistura/resampling e ciclo de dispositivos na mesma thread. O smoke test WASAPI de 21/10 recebeu 1,3s de amostras em desktop e combinado, com proteção de suspensão e destino em memória, sem salvar áudio pessoal.
 
-## Regressões verificadas
+Community-1 depende de acesso ao modelo autorizado e não foi executado nesta instalação. A associação temporal tem testes. SMTP externo, OBS físico/entrada virtual e áudio de tela exigem configuração e verificação no dispositivo. Os testes de SMTP usam substituto local e não enviam mensagens.
 
-- Cancelamento cooperativo sem sinalizar o processo do SimpleWorker ou interromper o ffmpeg.
-- Cancelamento após extração sem carregar um modelo desnecessariamente.
-- Retomada de transcrições, documentos e trechos persistidos sem duplicar trabalho já enfileirado.
-- Escrita local de novos trechos enquanto uploads anteriores aguardam resposta; recuperação após recarregar a página.
-- Segmentos confirmados deduplicados e separados das revisões provisórias.
-- Edição, salvamento, desfazer, busca, substituição, timestamps, reprodução e exportação SRT.
-- Busca remota com debounce, composição de texto, cancelamento de requests antigos, filtros e paginação.
-- Fontes de documentos ligadas a segmentos existentes, com citações literais e valores desconhecidos preservados.
-- Citações copiadas pelo servidor a partir das fontes selecionadas, sem depender da reprodução literal pelo modelo; IDs inválidos continuam recusados.
-- Lotes dimensionados pelo payload completo, incluindo muitos segmentos curtos e seus metadados, preservando a ordem e todas as fontes.
-- Revisão antes do compartilhamento; alterações da fonte invalidam documentos e links.
-- Geração real, revisão, exportação PDF/DOCX, abertura e revogação de link privado.
-- Markdown sem execução de HTML, links JavaScript ou imagens remotas.
-- Token mascarado, recuperação de sessão, validação SMTP e idempotência em resultado incerto.
+Whisper e Ollama compartilham uma fila serial. Consultas e modelos podem aumentar a espera de processamento; a captura mantém seu diário independente. Responsáveis e datas ausentes permanecem não definidos. Edições nas fontes invalidam a revisão e sinalizam as referências históricas.
+
+A auditoria completa npm registra cinco avisos altos de `braces` nas ferramentas de desenvolvimento, documentados no [GitHub Advisory Database](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm). A auditoria de dependências de produção registra zero vulnerabilidades.
 
 ## Reproduzir
 
-Instale as dependências Python de desenvolvimento e o núcleo compartilhado. Mantenha Redis acessível em localhost:6379 para a suíte Python; os testes usam banco temporário e filas próprias.
-
-```powershell
-python -m pip install -e packages/core -r apps/api/requirements-dev.txt -r apps/worker/requirements-dev.txt
-New-Item -ItemType Directory -Force .devdata | Out-Null
-python -m pytest apps/api/tests -c apps/api/pytest.ini --basetemp=.devdata/pytest-api --cov=apps/api/app --cov=packages/core/src/audiowhisper_core --cov-fail-under=88
-python -m pytest apps/worker/tests -c apps/worker/pytest.ini --basetemp=.devdata/pytest-worker --cov=apps/worker/app --cov-fail-under=65
-```
-
-Em `apps/web`:
-
-```powershell
-npm ci
-npm run lint
-npm run typecheck
-npm run test:coverage
-npm run build
-npx playwright install chromium
-npm run test:e2e
-npm run test:visual
-```
-
-E2E requer a stack e os modelos locais disponíveis em `http://localhost:8080` (ou `E2E_BASE_URL`). Execute o QA visual depois do E2E: ele reutiliza a reunião sintética concluída e o runner limpa o diretório de resultados ao iniciar. Capturas e medições ficam em `apps/web/test-results/visual`. A [galeria](docs/SCREENSHOTS.md) contém exemplos revisados.
+No diretório `apps/web`, execute `npm run lint`, `npm run typecheck`, `npm run test:coverage`, `npm run test:e2e`, `npm run test:visual` e `npm run test:visual:workspace`. Os E2E requerem a stack e o Ollama disponíveis. Os scripts visuais reutilizam o conteúdo sintético produzido pelos E2E. Os comandos de API, worker e capturador estão no workflow Quality e nos guias de cada módulo.

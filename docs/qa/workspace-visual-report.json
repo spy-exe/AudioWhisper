@@ -1,0 +1,488 @@
+{
+  "layouts": [
+    {
+      "page": "central",
+      "width": 320,
+      "scrollWidth": 310,
+      "bodyFont": 17,
+      "minField": null,
+      "minControl": null
+    },
+    {
+      "page": "projects",
+      "width": 320,
+      "scrollWidth": 310,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 48
+    },
+    {
+      "page": "project",
+      "width": 320,
+      "scrollWidth": 310,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 48
+    },
+    {
+      "page": "search",
+      "width": 320,
+      "scrollWidth": 310,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 40
+    },
+    {
+      "page": "tasks",
+      "width": 320,
+      "scrollWidth": 310,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 24
+    },
+    {
+      "page": "notebook",
+      "width": 320,
+      "scrollWidth": 310,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 24
+    },
+    {
+      "page": "knowledge",
+      "width": 320,
+      "scrollWidth": 310,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 40
+    },
+    {
+      "page": "recipes",
+      "width": 320,
+      "scrollWidth": 310,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 24
+    },
+    {
+      "page": "central",
+      "width": 390,
+      "scrollWidth": 380,
+      "bodyFont": 17,
+      "minField": null,
+      "minControl": null
+    },
+    {
+      "page": "projects",
+      "width": 390,
+      "scrollWidth": 380,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 48
+    },
+    {
+      "page": "project",
+      "width": 390,
+      "scrollWidth": 380,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 48
+    },
+    {
+      "page": "search",
+      "width": 390,
+      "scrollWidth": 380,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 40
+    },
+    {
+      "page": "tasks",
+      "width": 390,
+      "scrollWidth": 380,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 24
+    },
+    {
+      "page": "notebook",
+      "width": 390,
+      "scrollWidth": 380,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 24
+    },
+    {
+      "page": "knowledge",
+      "width": 390,
+      "scrollWidth": 380,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 40
+    },
+    {
+      "page": "recipes",
+      "width": 390,
+      "scrollWidth": 380,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 24
+    },
+    {
+      "page": "central",
+      "width": 768,
+      "scrollWidth": 758,
+      "bodyFont": 17,
+      "minField": null,
+      "minControl": null
+    },
+    {
+      "page": "projects",
+      "width": 768,
+      "scrollWidth": 758,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 48
+    },
+    {
+      "page": "project",
+      "width": 768,
+      "scrollWidth": 758,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 48
+    },
+    {
+      "page": "search",
+      "width": 768,
+      "scrollWidth": 758,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 40
+    },
+    {
+      "page": "tasks",
+      "width": 768,
+      "scrollWidth": 758,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 24
+    },
+    {
+      "page": "notebook",
+      "width": 768,
+      "scrollWidth": 758,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 24
+    },
+    {
+      "page": "knowledge",
+      "width": 768,
+      "scrollWidth": 758,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 40
+    },
+    {
+      "page": "recipes",
+      "width": 768,
+      "scrollWidth": 758,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 24
+    },
+    {
+      "page": "central",
+      "width": 1024,
+      "scrollWidth": 1014,
+      "bodyFont": 17,
+      "minField": null,
+      "minControl": null
+    },
+    {
+      "page": "projects",
+      "width": 1024,
+      "scrollWidth": 1014,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 48
+    },
+    {
+      "page": "project",
+      "width": 1024,
+      "scrollWidth": 1014,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 48
+    },
+    {
+      "page": "search",
+      "width": 1024,
+      "scrollWidth": 1014,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 40
+    },
+    {
+      "page": "tasks",
+      "width": 1024,
+      "scrollWidth": 1014,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 24
+    },
+    {
+      "page": "notebook",
+      "width": 1024,
+      "scrollWidth": 1014,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 24
+    },
+    {
+      "page": "knowledge",
+      "width": 1024,
+      "scrollWidth": 1014,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 40
+    },
+    {
+      "page": "recipes",
+      "width": 1024,
+      "scrollWidth": 1014,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 24
+    },
+    {
+      "page": "central",
+      "width": 1440,
+      "scrollWidth": 1430,
+      "bodyFont": 17,
+      "minField": null,
+      "minControl": null
+    },
+    {
+      "page": "projects",
+      "width": 1440,
+      "scrollWidth": 1430,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 48
+    },
+    {
+      "page": "project",
+      "width": 1440,
+      "scrollWidth": 1430,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 48
+    },
+    {
+      "page": "search",
+      "width": 1440,
+      "scrollWidth": 1430,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 40
+    },
+    {
+      "page": "tasks",
+      "width": 1440,
+      "scrollWidth": 1430,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 24
+    },
+    {
+      "page": "notebook",
+      "width": 1440,
+      "scrollWidth": 1430,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 24
+    },
+    {
+      "page": "knowledge",
+      "width": 1440,
+      "scrollWidth": 1430,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 40
+    },
+    {
+      "page": "recipes",
+      "width": 1440,
+      "scrollWidth": 1430,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 24
+    },
+    {
+      "page": "central",
+      "width": 1920,
+      "scrollWidth": 1910,
+      "bodyFont": 17,
+      "minField": null,
+      "minControl": null
+    },
+    {
+      "page": "projects",
+      "width": 1920,
+      "scrollWidth": 1910,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 48
+    },
+    {
+      "page": "project",
+      "width": 1920,
+      "scrollWidth": 1910,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 48
+    },
+    {
+      "page": "search",
+      "width": 1920,
+      "scrollWidth": 1910,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 40
+    },
+    {
+      "page": "tasks",
+      "width": 1920,
+      "scrollWidth": 1910,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 24
+    },
+    {
+      "page": "notebook",
+      "width": 1920,
+      "scrollWidth": 1910,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 24
+    },
+    {
+      "page": "knowledge",
+      "width": 1920,
+      "scrollWidth": 1910,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 40
+    },
+    {
+      "page": "recipes",
+      "width": 1920,
+      "scrollWidth": 1910,
+      "bodyFont": 17,
+      "minField": 16,
+      "minControl": 24
+    }
+  ],
+  "accessibility": [
+    {
+      "page": "central",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "page": "projects",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "page": "project",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "page": "search",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "page": "tasks",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "page": "notebook",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "page": "knowledge",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "page": "recipes",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "page": "central",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "page": "projects",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "page": "project",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "page": "search",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "page": "tasks",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "page": "notebook",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "page": "knowledge",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "page": "recipes",
+      "width": 1440,
+      "violations": []
+    }
+  ],
+  "states": [
+    "disclosure-keyboard",
+    "motion-normal",
+    "motion-os-reduced",
+    "motion-app-disabled",
+    "project-hover",
+    "commands-focus-restored",
+    "search-error",
+    "search-empty",
+    "search-loading"
+  ],
+  "errors": [],
+  "motion": {
+    "samples": 120,
+    "medianMs": 16.699999999999932,
+    "p95Ms": 16.700000000000273,
+    "framesOver50Ms": 0
+  }
+}

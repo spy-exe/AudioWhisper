@@ -16,6 +16,8 @@ export default defineConfig({
   // per-test default (30s) is far too short for that, even with a warm model.
   timeout: 6 * 60_000,
   use: {
+    actionTimeout: 20000,
+    navigationTimeout: 30000,
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:8080",
     trace: "on-first-retry",
   },

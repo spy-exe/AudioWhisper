@@ -1,6 +1,6 @@
 # Central de trabalho
 
-Módulo: `command-center`. Escopo aprovado em 21/10/2026: continuar com todo o pacote entregue. Índice: `CAPABILITY-MAP.md`.
+Módulo: `command-center`. Índice: `CAPABILITY-MAP.md`.
 
 ## Objetivo e critérios de aceite
 Reunir contagens reais, pendências e atividade; paleta de navegação Ctrl+K; menus adaptados a telas pequenas.
@@ -21,4 +21,4 @@ Reutilizar SQLAlchemy, Pydantic, FastAPI e cliente tipado existentes. Exemplo: `
 Teste de comportamento antes da implementação; integração API/banco; worker isolado com provedor controlado; navegador com dados sintéticos para fluxos completos, screenshots, teclado, acessibilidade, loading/erro/vazio e movimento. Medir cobertura nova e regressão da base; registrar limitações reais.
 
 ## Limites
-Sempre: migração aditiva, autenticação existente, paginação, referências verificáveis e revisão explícita de documentos. Alterações de esquema, rotas e UI necessárias a este escopo estão autorizadas. Nunca: apagar gravações, enviar conteúdo automaticamente, publicar conteúdo pessoal ou segredos. Provedor local já instalado; nenhuma nova dependência de execução prevista.
+Sempre: migração aditiva, autenticação existente, paginação, referências verificáveis e revisão explícita de documentos. Nunca: apagar gravações, enviar conteúdo automaticamente, publicar conteúdo pessoal ou segredos. Provedor local já instalado; nenhuma nova dependência de execução prevista.

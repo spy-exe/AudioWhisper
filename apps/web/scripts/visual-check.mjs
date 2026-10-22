@@ -108,7 +108,7 @@ try {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.setViewportSize({ width: 1440, height: 1050 });
   await page.goto(baseURL);
-  await page.locator('.signal-motion').waitFor();
+  await page.getByRole('button', { name: 'Iniciar captura' }).waitFor();
   const frames = await page.evaluate(() => new Promise(resolve => {
     const samples = []; let previous;
     function tick(now) { if (previous !== undefined) samples.push(now - previous); previous = now; if (samples.length < 120) requestAnimationFrame(tick); else resolve(samples); }
@@ -116,6 +116,18 @@ try {
   }));
   frames.sort((a, b) => a - b);
   const motion = { samples: frames.length, medianMs: frames[60], p95Ms: frames[114], framesOver50Ms: frames.filter(ms => ms > 50).length };
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto(baseURL + '/jobs/' + editor);
+  const preview = page.getByRole('region', { name: 'Prévia do documento', exact: true });
+  await preview.waitFor(); await preview.focus();
+  assert.ok(await preview.evaluate(el => document.activeElement === el), 'Document preview must be reachable by keyboard');
+  const region = await preview.evaluate(el => ({ height: el.clientHeight, content: el.scrollHeight }));
+  if (region.content > region.height) {
+    await preview.press('PageDown');
+    await page.waitForFunction(() => document.querySelector('[aria-label="Prévia do documento"]').scrollTop > 0);
+    states.push('document-preview-keyboard-scroll');
+  }
+  states.push('document-preview-keyboard-focus');
   await writeFile(`${output}/report.json`, JSON.stringify({ checks, states, audits, motion, errors, expectedConsoleErrors }, null, 2));
   console.log(JSON.stringify({ motion, errors, audits }));
   assert.equal(errors.length, 0, `Browser errors: ${errors.join('; ')}`);
