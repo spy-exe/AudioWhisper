@@ -5,6 +5,7 @@ def test_health_ok(client):
     assert body["status"] == "ok"
     assert body["database"] is True
     assert body["redis"] is True
+    assert body["environment"] == "test"
 
 
 def test_health_gpu_without_worker(client):

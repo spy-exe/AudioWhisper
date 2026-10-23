@@ -40,6 +40,7 @@ def health(db: Session = Depends(get_db), settings: Settings = Depends(get_setti
     return {
         "status": "ok" if (db_ok and redis_ok) else "degraded",
         "service": "api",
+        "environment": settings.environment,
         "database": db_ok,
         "redis": redis_ok,
         "worker": worker_ok,

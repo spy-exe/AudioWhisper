@@ -2,14 +2,16 @@
 
 Aplicação de produção em Docker Compose no Windows. Chromium desktop e emulação Pixel 7, faster-whisper `turbo` com CUDA/float16 na RTX 5060 e Ollama `qwen3:4b`. Os fluxos usam áudio sintético. As capturas públicas filtram os arquivos pelo SHA-256 da reunião de teste; ferramentas do workspace exibem somente um projeto sintético verificado.
 
+Após essa execução, os registros sintéticos foram separados da biblioteca pessoal, com backup integral e conferência dos dados preservados. Os testes de navegador e scripts visuais agora exigem uma instalação independente na porta 8090, identificada pela API com `ENVIRONMENT=e2e`. A porta 8080 é recusada antes de qualquer criação de dados. O simulador Windows aplica a mesma restrição, inclusive quando iniciado diretamente.
+
 ## Resultados
 
 | Verificação | Resultado |
 |---|---|
-| API e núcleo | 213 testes aprovados; cobertura de linhas 96,75% |
+| API e núcleo | 213 testes aprovados; cobertura de linhas 96,72% |
 | Worker | 72 testes aprovados; cobertura de linhas 94,00% |
-| Frontend | 237 testes aprovados; cobertura de linhas 77,30% |
-| Capturador Windows | 26 testes aprovados; cobertura de linhas 77,88% |
+| Frontend | 263 testes aprovados; cobertura de linhas 77,39%; proteção do destino E2E com 100% de linhas, ramos e funções |
+| Capturador Windows | 38 testes aprovados; cobertura de linhas 77,88% |
 | Fluxos completos | 63 cenários aprovados entre a suíte completa e a reexecução dos 24 casos de editor/Studio 2.1; um caso exclusivo do Windows dispensado no projeto mobile |
 | TypeScript, ESLint e build de produção | Aprovados |
 | Dependências de produção | Zero vulnerabilidades na auditoria npm |
@@ -50,6 +52,8 @@ A cobertura contabiliza todo o código de cada escopo. A cobertura de navegador 
 
 O detalhamento está em [coverage-summary.json](docs/qa/coverage-summary.json). O workflow Quality publica os relatórios completos como artefatos.
 
+Na correção de isolamento, os 26 novos casos do frontend e os 12 novos casos do simulador Windows foram aprovados. O bloqueio da porta 8080 foi exercitado pela CLI real do Playwright. Dois cenários de navegador, desktop e mobile, abriram a biblioteca da instalação separada sem criar gravações. A inspeção dos containers confirmou volumes distintos para banco, uploads, exportações, temporários e modelos. O CI também valida a configuração dos sete volumes da stack de QA. A suíte completa de transcrição e documentos acima não foi reexecutada durante essa correção.
+
 ## Limites verificados
 
 Os testes axe usam as regras WCAG A/AA disponíveis e não substituem avaliação com leitores de tela. A interação da bandeja Windows não tem automação. Os testes nativos cobrem diário em disco, interrupção, falha de rede, mistura/resampling e ciclo de dispositivos na mesma thread. O smoke test WASAPI de 21/10 recebeu 1,3s de amostras em desktop e combinado, com proteção de suspensão e destino em memória, sem salvar áudio pessoal.
@@ -64,4 +68,19 @@ A auditoria completa npm registra cinco avisos altos de `braces` nas ferramentas
 
 ## Reproduzir
 
-No diretório `apps/web`, execute `npm run lint`, `npm run typecheck`, `npm run test:coverage`, `npm run test:e2e`, `npm run test:visual`, `npm run test:visual:workspace` e `npm run test:visual:motion`. Os E2E requerem a stack e o Ollama disponíveis. Os scripts visuais reutilizam o conteúdo sintético produzido pelos E2E. Os comandos de API, worker e capturador estão no workflow Quality e nos guias de cada módulo.
+Os testes unitários usam `npm run lint`, `npm run typecheck` e `npm run test:coverage` em `apps/web`. Os comandos de API, worker e capturador estão no workflow Quality e nos guias de cada módulo.
+
+Para os testes de navegador, use o arquivo independente de QA a partir da raiz do repositório. Ele cria o projeto `audiowhisper-qa`, com banco, arquivos, fila e modelos próprios, sem SMTP configurado. O download inicial dos modelos ocorre novamente nessa instalação. Para a configuração NVIDIA usada na validação:
+
+```powershell
+docker compose -f docker-compose.e2e.yml -f docker-compose.gpu.yml up -d --build
+docker compose -f docker-compose.e2e.yml exec ollama ollama pull qwen3:4b
+cd apps/web
+$env:E2E_BASE_URL = 'http://localhost:8090'
+npm run test:e2e
+npm run test:visual
+npm run test:visual:workspace
+npm run test:visual:motion
+```
+
+Os scripts visuais reutilizam o conteúdo sintético produzido pelos E2E. Para verificar apenas a proteção e a navegação, sem iniciar processamento de áudio ou documentos, suba somente `redis api web gateway` e execute `npm run test:e2e -- tests/e2e/isolation.spec.ts`. A stack de uso pessoal continua na porta 8080.

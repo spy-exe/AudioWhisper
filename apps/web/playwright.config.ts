@@ -1,7 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
+import { getE2ETarget } from "./scripts/e2e-target.mjs";
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: true,
   // Several tests trigger a real GPU transcription. Each Playwright worker is a real Chromium
   // instance rendering the app's own WebGL content (PixiJS pulse, the Three.js hero scene,
@@ -18,7 +20,7 @@ export default defineConfig({
   use: {
     actionTimeout: 20000,
     navigationTimeout: 30000,
-    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:8080",
+    baseURL: getE2ETarget(process.env.E2E_BASE_URL),
     trace: "on-first-retry",
   },
   projects: [

@@ -12,7 +12,7 @@ export default defineConfig({
     setupFiles: ["./tests/unit/setup.ts"],
     coverage: {
       provider: "v8",
-      include: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "hooks/**/*.ts", "contexts/**/*.tsx", "lib/**/*.ts"],
+      include: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "hooks/**/*.ts", "contexts/**/*.tsx", "lib/**/*.ts", "scripts/e2e-target.mjs"],
       reporter: ["text", "json-summary", "lcov", "html"],
       reportsDirectory: "coverage",
       thresholds: {
@@ -20,6 +20,7 @@ export default defineConfig({
         branches: 70,
         functions: 70,
         lines: 75,
+        "scripts/e2e-target.mjs": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "lib/live-audio.ts": { lines: 95, branches: 85 },
         "lib/api.ts": { lines: 95, branches: 90 },
         "lib/transcription-settings.ts": { lines: 100, branches: 100 },

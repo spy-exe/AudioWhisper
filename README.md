@@ -151,7 +151,7 @@ decisões de design.
 
 ```bash
 make test          # testes de api, worker e web
-make test-e2e       # Playwright (requer a stack rodando em http://localhost:8080)
+make test-e2e       # Playwright na stack isolada de QA, porta 8090 (veja VALIDATION.md)
 make gpu-check      # nvidia-smi + diagnóstico CTranslate2 + smoke test real de transcrição
 make lint           # lint + typecheck do frontend
 make clean-temp     # limpa apenas /data/tmp (nunca uploads/exports/db)

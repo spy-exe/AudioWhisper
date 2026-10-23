@@ -42,7 +42,7 @@ test-web:
 	cd apps/web && npm test
 
 test-e2e:
-	cd apps/web && npm run test:e2e
+	cd apps/web && E2E_BASE_URL=http://localhost:8090 npm run test:e2e
 
 ## Real GPU diagnostics: nvidia-smi inside the worker container + the CTranslate2 smoke test.
 gpu-check:

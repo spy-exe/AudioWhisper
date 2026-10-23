@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { chromium } from '@playwright/test';
+import { assertE2ETarget } from './e2e-target.mjs';
 
-const base = process.env.E2E_BASE_URL ?? 'http://localhost:8080';
+const base = await assertE2ETarget(process.env.E2E_BASE_URL);
 const output = 'test-results/motion';
 const browser = await chromium.launch();
 const report = { interactions: [], errors: [] };

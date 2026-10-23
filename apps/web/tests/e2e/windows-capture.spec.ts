@@ -4,10 +4,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium, expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { getE2ETarget } from "../../scripts/e2e-target.mjs";
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const repository = path.resolve(directory, "../../../..");
-const headers = { Origin: "http://localhost:8080", "X-AudioWhisper-Capture": "1" };
 
 async function connectFixture(page: Page) {
   // Documentation captures must never include the user's recent recordings.
@@ -21,17 +21,20 @@ async function connectFixture(page: Page) {
 
 test("Windows capture survives closing the entire browser and reconnects to the same recording", async ({ request }, testInfo) => {
   test.skip(process.platform !== "win32" || testInfo.project.name !== "chromium", "Capturador de desktop Windows; executado uma vez com um processo próprio.");
+  const baseURL = getE2ETarget(testInfo.project.use.baseURL);
+  const headers = { Origin: baseURL, "X-AudioWhisper-Capture": "1" };
   const log = openSync(testInfo.outputPath("capture-agent.log"), "w");
   const helper = spawn(process.env.CAPTURE_TEST_PYTHON ?? path.join(repository, ".venv-dev/Scripts/python.exe"), [
     path.join(repository, "apps/capture/tests/serve_fixture.py"), "--directory", testInfo.outputPath("spool"),
     "--audio", path.join(directory, "fixtures/speech.wav"),
+    "--api-url", baseURL,
   ], { cwd: repository, windowsHide: true, stdio: ["ignore", log, log] });
   let browser = await chromium.launch();
   try {
     await expect.poll(async () => {
       try { return (await request.get("http://127.0.0.1:8766/health")).ok(); } catch { return false; }
     }).toBe(true);
-    const context = await browser.newContext({ baseURL: "http://localhost:8080", viewport: { width: 1440, height: 1000 } });
+    const context = await browser.newContext({ baseURL, viewport: { width: 1440, height: 1000 } });
     const page = await context.newPage();
     await connectFixture(page);
     await page.goto("/?capture=windows");
@@ -57,7 +60,7 @@ test("Windows capture survives closing the entire browser and reconnects to the 
       return current.duration;
     }, { timeout: 20000 }).toBeGreaterThan((first.duration ?? 0) + 7);
     browser = await chromium.launch();
-    const resumedContext = await browser.newContext({ baseURL: "http://localhost:8080", viewport: { width: 1440, height: 1000 } });
+    const resumedContext = await browser.newContext({ baseURL, viewport: { width: 1440, height: 1000 } });
     const resumed = await resumedContext.newPage();
     await connectFixture(resumed);
     await resumed.goto("/?capture=windows");

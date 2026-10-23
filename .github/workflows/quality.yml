@@ -31,6 +31,19 @@ jobs:
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
       - run: npm ci
+      - name: Verify QA data isolation
+        working-directory: .
+        run: |
+          docker compose -f docker-compose.e2e.yml config --format json > "$RUNNER_TEMP/qa-compose.json"
+          python - "$RUNNER_TEMP/qa-compose.json" <<'PY'
+          import json, sys
+          config = json.load(open(sys.argv[1]))
+          assert config['name'] == 'audiowhisper-qa'
+          assert all(volume['name'].startswith('audiowhisper-qa_') for volume in config['volumes'].values())
+          assert config['services']['gateway']['ports'][0]['published'] == '8090'
+          assert config['services']['api']['environment']['ENVIRONMENT'] == 'e2e'
+          assert config['services']['worker']['environment']['ENVIRONMENT'] == 'e2e'
+          PY
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test:coverage

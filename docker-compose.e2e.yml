@@ -1,0 +1,69 @@
+# Standalone QA project. Never combine this file with docker-compose.yml.
+name: audiowhisper-qa
+
+services:
+  redis:
+    extends:
+      file: docker-compose.yml
+      service: redis
+
+  api:
+    extends:
+      file: docker-compose.yml
+      service: api
+    image: audiowhisper-qa-api
+    environment:
+      ENVIRONMENT: e2e
+      ACCESS_TOKEN: ""
+      CORS_ALLOW_ORIGINS: http://localhost:8090,http://127.0.0.1:8090
+      OLLAMA_URL: http://ollama:11434
+      SMTP_HOST: ""
+      SMTP_USERNAME: ""
+      SMTP_PASSWORD: ""
+      SMTP_FROM: ""
+
+  worker:
+    extends:
+      file: docker-compose.yml
+      service: worker
+    image: audiowhisper-qa-worker
+    environment:
+      ENVIRONMENT: e2e
+      OLLAMA_URL: http://ollama:11434
+
+  web:
+    extends:
+      file: docker-compose.yml
+      service: web
+    image: audiowhisper-qa-web
+
+  gateway:
+    image: caddy:2-alpine
+    ports:
+      - "127.0.0.1:8090:8080"
+    volumes:
+      - ./infra/gateway/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    networks: [audiowhisper]
+
+  ollama:
+    extends:
+      file: docker-compose.ai.yml
+      service: ollama
+
+volumes:
+  db_data:
+  uploads_data:
+  exports_data:
+  tmp_data:
+  model_cache:
+  redis_data:
+  ollama_data:
+
+networks:
+  audiowhisper:
+    driver: bridge
