@@ -36,6 +36,8 @@ Uma compilação aprovada não equivale a validação em aparelho. A validação
 
 ## Instalar e conectar
 
+Baixe o [APK Android beta assinado](https://github.com/spy-exe/AudioWhisper/releases/tag/mobile-v0.1.0-beta.1). A interface e as capturas de validação estão abaixo; todos os conteúdos mostrados são de QA.
+
 1. Inicie o Studio no PC com a GPU disponível. A API precisa incluir `/api/companion`. Instale o APK Android da versão mobile no celular, Android 10 ou superior.
 2. Na aba **Conexão**, informe `http://<IPv4-do-PC>:8080`. Celular e PC devem estar na mesma rede ou conectados por VPN. O endereço `localhost` no celular aponta para o próprio celular.
 3. Se o Studio usa `ACCESS_TOKEN`, abra **Token de acesso** e informe o mesmo valor. Toque em **Testar e conectar**. O app confirma a identidade do PC e mostra o modelo e dispositivo configurados no Studio.
@@ -43,6 +45,12 @@ Uma compilação aprovada não equivale a validação em aparelho. A validação
 5. Acompanhe o texto confirmado pelo PC. Use **Encerrar**, inclusive ao trocar de aba. As gravações e a cópia da transcrição ficam em **Gravações**. **Compartilhar áudio original** prepara um WAV e abre o compartilhamento do sistema após sua ação.
 
 O gateway do Studio já escuta na rede. Permita TCP 8080 no firewall da rede privada do PC. Não encaminhe essa porta no roteador para a internet. Pela VPN, informe o IP do PC fornecido por ela. HTTP é permitido para uso em rede confiável; HTTPS usa a validação normal de certificados do sistema.
+
+No Windows, execute `scripts/Preparar-Mobile.cmd` e aceite a elevação solicitada pelo Windows. O preparador cria uma regra somente para TCP 8080 no IP, interface e sub-rede atuais. Funciona também quando a conexão está marcada como pública, sem alterar o perfil da rede nem liberar outras portas. A sessão de desenvolvimento não possui privilégios de administrador; a criação efetiva dessa regra depende dessa autorização do Windows.
+
+O resultado fica em `.devdata/mobile-access.json`. Para conferir sem alterar nada, execute `scripts/Enable-MobileAccess.ps1 -WhatIf`. Se o IP do PC mudar, execute o preparador novamente. Se houver mais de uma interface com gateway, selecione uma explicitamente com `-InterfaceAlias`.
+
+Para uma VPN roteada, `-AdditionalSubnet` permite adicionar a sub-rede fornecida pela sua VPN à regra, por exemplo `scripts/Enable-MobileAccess.ps1 -AdditionalSubnet 10.20.30.0/24`. Para uma interface de VPN no próprio PC, selecione também `-InterfaceAlias`. O endereço é apenas um exemplo: use os dados reais da sua VPN.
 
 Para atualizar apenas a API de um Studio existente, preservando os volumes:
 
@@ -109,6 +117,7 @@ As [exceções temporárias de dependências](../apps/mobile/SECURITY.md) são e
 - [Build no GitHub](https://github.com/spy-exe/AudioWhisper/actions/runs/40391539786): quality, Android e iOS aprovados.
 - APK assinado no emulador Android 15: 2 testes completos aprovados em 115,436 s. Incluem captura de microfone e aplicativos combinados, texto real antes de parar, desligamento de Wi-Fi e dados, reenvio após reconexão, parada pela notificação, microfone com tela bloqueada, recuperação após encerramento forçado e parada disponível durante um timeout de conexão.
 - QA visual em 411dp e 320dp, incluindo fonte a 130%, teclado, navegação por três botões e compartilhamento do WAV pelo seletor do sistema. A validação encontrou e corrigiu sobreposição da navegação e quebra de rótulos. Nenhuma mensagem ou arquivo foi enviado pelo seletor de compartilhamento.
+- Transição de tela registrada em vídeo no emulador e conferida quadro a quadro. O fundo de navegação foi alinhado ao tema escuro para evitar clarão durante o fade. Navegação também conferida com movimento reduzido no sistema; não representa um benchmark de FPS em aparelho físico.
 
 Os testes de dispositivo recusam aparelhos físicos e APIs fora do ambiente `e2e` em `localhost:8090`. `tests/build_android_fixture.py` gera um player somente para QA com o arquivo público `apps/web/tests/e2e/fixtures/speech.wav`. A validação não injeta gravações na biblioteca pessoal.
 
@@ -123,3 +132,13 @@ python apps/mobile/tests/android_e2e.py
 ```
 
 As capturas e os logs locais ficam em `.devdata/qa/mobile` e `.devdata`, ignorados pelo Git. O teste espera permissões de áudio e notificações já concedidas no emulador. O diálogo de captura dos aplicativos continua sendo solicitado a cada sessão.
+
+## Capturas do APK
+
+| Gravar | Texto real da GPU durante a gravação |
+|---|---|
+| ![Captura no Android](screenshots/mobile-capture.png) | ![Transcrição ao vivo de áudio sintético](screenshots/mobile-live.png) |
+
+| Gravações locais | Fonte ampliada, tela estreita |
+|---|---|
+| ![Arquivos preservados no aparelho](screenshots/mobile-library.png) | ![Interface com fonte a 130%](screenshots/mobile-large-font.png) |
