@@ -1,4 +1,6 @@
 import { Stack } from "expo-router";
+import { useEffect } from "react";
+import * as NavigationBar from "expo-navigation-bar";
 import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
@@ -6,7 +8,7 @@ import IBMPlexSans_400Regular from "@expo-google-fonts/ibm-plex-sans/400Regular/
 import IBMPlexSans_500Medium from "@expo-google-fonts/ibm-plex-sans/500Medium/IBMPlexSans_500Medium.ttf";
 import Manrope_700Bold from "@expo-google-fonts/manrope/700Bold/Manrope_700Bold.ttf";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, AppState, Platform, View } from "react-native";
 import { CompanionProvider, useCompanion } from "../core/controller";
 import { colors } from "../ui/theme";
 import { useReducedMotion } from "../ui/primitives";
@@ -14,6 +16,12 @@ import { useReducedMotion } from "../ui/primitives";
 const navigationTheme = { ...DarkTheme, colors: { ...DarkTheme.colors, background: colors.background, card: colors.background, text: colors.text, border: colors.border, primary: colors.primary, notification: colors.amber } };
 
 export default function RootLayout() {
+  useEffect(() => {
+    const apply = () => { if (Platform.OS === "android") NavigationBar.setStyle("dark"); };
+    apply();
+    const listener = AppState.addEventListener("change", state => { if (state === "active") apply(); });
+    return () => listener.remove();
+  }, []);
   const [loaded, error] = useFonts({ IBMPlexSans_400Regular, IBMPlexSans_500Medium, Manrope_700Bold });
   if (!loaded && !error) return <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: "center" }}><ActivityIndicator color={colors.primary} accessibilityLabel="Carregando o AudioWhisper" /></View>;
   return <SafeAreaProvider><CompanionProvider><ThemeProvider value={navigationTheme}><StatusBar style="light" /><Application /></ThemeProvider></CompanionProvider></SafeAreaProvider>;
