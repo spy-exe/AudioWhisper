@@ -1,0 +1,1 @@
+{"platforms":["android","apple"],"android":{"modules":["studio.audiowhisper.capture.CompanionCaptureModule"]},"apple":{"modules":["CompanionCaptureModule"]}}

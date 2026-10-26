@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "AudioWhisper",
+    "slug": "audiowhisper-mobile",
+    "version": "0.1.0",
+    "scheme": "audiowhisper",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0c1220"
+    },
+    "ios": {
+      "bundleIdentifier": "studio.audiowhisper.mobile",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "O AudioWhisper grava o microfone e envia o áudio para o seu PC transcrever.",
+        "NSLocalNetworkUsageDescription": "O AudioWhisper se conecta ao seu PC na rede local para transcrever o áudio.",
+        "UIBackgroundModes": ["audio"],
+        "NSAppTransportSecurity": { "NSAllowsArbitraryLoads": true, "NSAllowsLocalNetworking": true },
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "studio.audiowhisper.mobile",
+      "allowBackup": false,
+      "adaptiveIcon": {
+        "backgroundColor": "#0c1220",
+        "foregroundImage": "./assets/icon.png"
+      },
+      "permissions": ["RECORD_AUDIO", "POST_NOTIFICATIONS"],
+      "predictiveBackGestureEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sharing",
+      "expo-font",
+      ["expo-build-properties", { "android": { "minSdkVersion": 29, "usesCleartextTraffic": true }, "ios": { "deploymentTarget": "16.0" } }]
+    ]
+  }
+}

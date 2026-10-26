@@ -1,0 +1,20 @@
+apply plugin: 'com.android.library'
+apply plugin: 'expo-module-gradle-plugin'
+
+group = 'studio.audiowhisper.capture'
+version = '0.1.0'
+
+android {
+  namespace 'studio.audiowhisper.capture'
+  defaultConfig { minSdkVersion 29; versionCode 1; versionName '0.1.0' }
+  testOptions.unitTests.all {
+    systemProperty 'aw.qa.url', System.getenv('E2E_BASE_URL') ?: ''
+    systemProperty 'aw.qa.wav', rootProject.file('../../web/tests/e2e/fixtures/speech.wav').absolutePath
+  }
+}
+
+dependencies {
+  implementation 'androidx.work:work-runtime:2.10.2'
+  testImplementation 'junit:junit:4.13.2'
+  testImplementation 'org.json:json:20250517'
+}

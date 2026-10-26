@@ -12,6 +12,7 @@ Fontes: `ARCHITECTURE.md`; contratos de `apps/api/app/routers`; identidade em `D
 | Documento | DocumentContent | Markdown do documento revisável | privado e compartilhado | componentes + Playwright |
 | Fonte de captura | CaptureSources | modos de /api/live | microfone/desktop/combinado/OBS | componentes + WASAPI |
 | Captura Windows | WindowsCapture + audiowhisper_capture | processo local e diário em disco | independente do navegador | pytest + fechamento do Chromium |
+| Captura móvel | apps/mobile/modules/companion-capture + src/core/controller | docs/MOBILE.md + /api/live | microfone nativo Android/iOS; áudio de aplicativos no Android | JVM, transporte nativo com GPU e emulador |
 | Workspace | componentes/hub + workspaceApi | SPECs do CAPABILITY-MAP e rotas /api/projects, /api/tasks, /api/notebook | central/projetos/ações/caderno | API + testes de componentes + fluxo completo |
 | Diálogos | WorkspaceDialog e Dialog | contrato HTML dialog + DESIGN.md | nativo para navegação e rascunhos; Dialog para edição e confirmações do Studio | foco, Escape, restauração e teclado no navegador |
 | Navegação | workspace-navigation + TopBar + CommandPalette | CAPABILITY-MAP.md | sidebar desktop, menu móvel, Ctrl+K | navegação e screenshots |

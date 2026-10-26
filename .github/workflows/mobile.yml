@@ -1,0 +1,103 @@
+name: Mobile
+
+on:
+  push:
+    branches: [main, feat/mobile-live-capture]
+    paths: ['apps/mobile/**', '.github/workflows/mobile.yml']
+  pull_request:
+    branches: [main]
+    paths: ['apps/mobile/**', '.github/workflows/mobile.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:coverage
+      - run: npm run build:web
+      - run: npm run audit:dependencies
+
+  android:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: apps/mobile
+    env:
+      NODE_ENV: production
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci --include=dev
+      - run: npx expo prebuild --platform android --no-install
+      - name: Native tests and standalone APK
+        working-directory: apps/mobile/android
+        run: ./gradlew :audiowhisper-companion-capture:testDebugUnitTest :app:assembleRelease --console=plain --max-workers=2 -PreactNativeArchitectures=arm64-v8a
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: mobile-android-validation
+          path: |
+            apps/mobile/modules/companion-capture/android/build/reports/tests
+            apps/mobile/android/app/build/outputs/apk/release/*.apk
+          retention-days: 14
+
+  ios:
+    needs: quality
+    runs-on: macos-26
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/mobile
+    env:
+      NODE_ENV: production
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - run: npm ci --include=dev
+      - run: npx expo prebuild --platform ios
+      - name: Compile native iOS application
+        run: |
+          set -o pipefail
+          xcodebuild -workspace ios/AudioWhisper.xcworkspace -scheme AudioWhisper \
+            -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build 2>&1 | tee ios-build.log
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: mobile-ios-build-log
+          path: apps/mobile/ios-build.log
+          retention-days: 14

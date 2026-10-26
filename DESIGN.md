@@ -77,6 +77,10 @@ components:
 
 # AudioWhisper Studio
 
+## Aplicativo nativo
+
+O cliente móvel herda a paleta e as famílias tipográficas deste documento. `apps/mobile/src/ui/theme.ts` é o adaptador nativo; `primitives.tsx` mantém campos, ações, estados e ícones compartilhados. Manrope 700 para títulos e IBM Plex Sans 400/500 para leitura e controles, com arquivos locais. Corpo de 17px e transcrição de 19px, ambos respeitando a escala de fonte do sistema. A cor âmbar identifica captura; azul identifica conexão e navegação; verde exige confirmação do PC. O medidor representa o nível real do áudio, sem movimento ambiente. As telas principais são gravar, gravações e conexão. O controle para encerrar permanece acessível nas abas durante a captura.
+
 ## Overview
 
 O AudioWhisper é uma ferramenta de trabalho com áudio. Cada tela apresenta uma tarefa identificável: gravar, localizar uma gravação, revisar texto, acompanhar tarefas ou preparar documentos. A hierarquia vem de títulos, espaçamento, tipografia e dados reais. Evitar slogans, chamadas promocionais, ilustrações de preenchimento e ícones de brilho para representar funções. Português do Brasil; datas no fuso do navegador e duração independente de fuso.
