@@ -3,11 +3,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useCompanion } from "../../core/controller";
 import { duration, pendingCount, sessionStatus, sourceLabel } from "../../core/presentation";
-import { Action, Body, Heading, Icon, layout, Notice, Panel, Pill } from "../../ui/primitives";
+import { Action, Body, Heading, Icon, layout, Notice, Panel, Pill, useNarrowLayout } from "../../ui/primitives";
 import { colors as c, fonts as f } from "../../ui/theme";
 
 export default function RecordingsScreen() {
   const controller = useCompanion();
+  const narrow = useNarrowLayout();
   const { snapshot, busy, error } = controller;
   const pending = pendingCount(snapshot.sessions);
   return <SafeAreaView edges={["top", "left", "right"]} style={layout.page}><ScrollView contentContainerStyle={[layout.content, snapshot.active_id && { paddingBottom: 110 }]}>
@@ -18,7 +19,7 @@ export default function RecordingsScreen() {
       <View style={s.list}>{snapshot.sessions.map(item => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`Abrir ${item.title}`} onPress={() => router.push(`/recording/${item.id}`)} style={({ pressed }) => [s.item, pressed && { backgroundColor: c.raised }]}>
         <View style={layout.between}><Text numberOfLines={2} style={s.title}>{item.title}</Text><Icon name="chevron" size={18} /></View>
         <Text style={s.meta}>{new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(item.created_at)} · {duration(item.duration)}</Text>
-        <View style={layout.between}><Text style={s.source}>{sourceLabel[item.source]}</Text><Pill {...sessionStatus(item)} /></View>
+        <View style={[layout.between, narrow && { flexDirection: "column", alignItems: "flex-start", gap: 8 }]}><Text style={s.source}>{sourceLabel[item.source]}</Text><Pill {...sessionStatus(item)} /></View>
       </Pressable>)}</View>}
   </ScrollView></SafeAreaView>;
 }

@@ -6,13 +6,14 @@ import { useIsFocused } from "@react-navigation/native";
 import { connectionFor, useCompanion, useTranscript } from "../../core/controller";
 import { duration, sessionStatus } from "../../core/presentation";
 import type { Source } from "../../core/types";
-import { Action, Body, Field, Heading, Icon, layout, Meter, Notice, Panel, Pill, WaveMark } from "../../ui/primitives";
+import { Action, Body, Field, FormViewport, Heading, Icon, layout, Meter, Notice, Panel, Pill, useNarrowLayout, WaveMark } from "../../ui/primitives";
 import { TranscriptView } from "../../ui/TranscriptView";
 import { colors as c, fonts as f } from "../../ui/theme";
 
 function defaultTitle() { return "Gravação " + new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date()); }
 export default function RecordScreen() {
   const controller = useCompanion();
+  const narrow = useNarrowLayout();
   const { snapshot, current, ready, busy, error, nativeAvailable } = controller;
   const [title, setTitle] = useState(defaultTitle);
   const [source, setSource] = useState<Source>("microphone");
@@ -24,11 +25,11 @@ export default function RecordScreen() {
   const status = session ? sessionStatus(session) : null;
   const start = async () => { const next = await controller.start(title, source); if (next) { setLastId(next.id); setTitle(defaultTitle()); } };
   const sources: { value: Source; label: string; icon: "mic" | "screen" }[] = [
-    { value: "microphone", label: "Microfone", icon: "mic" }, { value: "system", label: "Do app", icon: "screen" }, { value: "mixed", label: "Ambos", icon: "mic" },
+    { value: "microphone", label: "Microfone", icon: "mic" }, { value: "system", label: "Apps", icon: "screen" }, { value: "mixed", label: "Ambos", icon: "mic" },
   ];
   return <SafeAreaView style={layout.page} edges={["top", "left", "right"]}>
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[layout.content, active && { paddingBottom: 110 }]}>
-      <View style={layout.between}><View style={layout.row}><WaveMark small /><Text style={s.brand}>AudioWhisper</Text></View>
+    <FormViewport><ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" contentContainerStyle={[layout.content, active && { paddingBottom: 110 }]}>
+      <View style={[layout.between, { flexWrap: "wrap" }]}><View style={layout.row}><WaveMark small /><Text style={s.brand}>AudioWhisper</Text></View>
         <Pressable accessibilityRole="button" accessibilityLabel="Configurar conexão com o PC" onPress={() => router.navigate("/(tabs)/connection")} style={s.connection}>
           <View style={[s.connectionDot, { backgroundColor: destination ? c.primary : c.muted }]} /><Text numberOfLines={1} style={s.connectionName}>{destination?.name ?? "Conectar PC"}</Text><Icon name="chevron" size={14} />
         </Pressable>
@@ -48,26 +49,26 @@ export default function RecordScreen() {
       </Panel>
       {!active && <>
         <Field label="Título da gravação" value={title} onChangeText={setTitle} maxLength={500} />
-        <View style={{ gap: 9 }}><Text style={s.label}>Fonte do áudio</Text><View style={{ flexDirection: "row", gap: 9 }}>
+        <View style={{ gap: 9 }}><Text style={s.label}>Fonte do áudio</Text><View style={{ flexDirection: narrow ? "column" : "row", gap: 9 }}>
           {sources.map(item => {
             const disabled = item.value !== "microphone" && Platform.OS !== "android";
             return <Pressable key={item.value} accessibilityRole="radio" accessibilityLabel={item.value === "system" ? "Áudio dos aplicativos" : item.value === "mixed" ? "Microfone e áudio dos aplicativos" : item.label}
               accessibilityState={{ checked: source === item.value, disabled }} disabled={disabled} onPress={() => setSource(item.value)}
-              style={[s.source, source === item.value && s.sourceSelected, disabled && { opacity: .4 }]}>
+              style={[s.source, narrow && { flex: 0, flexDirection: "row", minHeight: 58, justifyContent: "flex-start", gap: 14 }, source === item.value && s.sourceSelected, disabled && { opacity: .4 }]}>
               <Icon name={item.icon} color={source === item.value ? c.primary : c.muted} /><Text style={[s.sourceText, source === item.value && { color: c.primary }]}>{item.label}</Text>
             </Pressable>;
           })}
-        </View><Text style={s.sourceHint}>{source === "microphone" ? "Microfone do celular, inclusive com a tela apagada." : source === "system" ? "Áudio dos apps que permitem captura. O Android pedirá autorização." : "Sua voz e o áudio dos aplicativos. Use fones para reduzir o eco."}</Text></View>
+        </View><Text style={s.sourceHint}>{source === "microphone" ? "Microfone do celular, inclusive com a tela apagada." : source === "system" ? "O Android pedirá permissão de captura de tela. Só o áudio dos apps que permitem captura é salvo." : "Sua voz e o áudio dos aplicativos. Use fones para reduzir o eco."}</Text></View>
       </>}
       {session && <View style={{ gap: 11 }}>
-        <View style={layout.between}><Heading small>Transcrição</Heading>{status && <Pill {...status} />}</View>
+        <View style={[layout.between, narrow && { flexDirection: "column", alignItems: "flex-start" }]}><Heading small>Transcrição</Heading>{status && <Pill {...status} />}</View>
         {session.error && <Notice>{session.error}</Notice>}
         {session.capture_notice && <Notice>{session.capture_notice}</Notice>}
         <TranscriptView transcript={transcript} recording={Boolean(active)} />
         <Text style={s.localNote}>{transcript.online ? "Trechos confirmados pelo PC. O tempo de resposta depende da fila e da GPU." : "O texto é atualizado quando o PC responde."}</Text>
         {!active && <Action label="Abrir gravação" icon="arrow" secondary onPress={() => router.push(`/recording/${session.id}`)} />}
       </View>}
-    </ScrollView>
+    </ScrollView></FormViewport>
   </SafeAreaView>;
 }
 const s = StyleSheet.create({

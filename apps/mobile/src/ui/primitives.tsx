@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AccessibilityInfo, ActivityIndicator, Animated, Pressable, StyleSheet, Text, TextInput, View, type TextInputProps, type ViewStyle } from "react-native";
+import { AccessibilityInfo, ActivityIndicator, Animated, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View, type TextInputProps, type ViewStyle } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import type { Tone } from "../core/types";
 import { colors as c, fonts as f } from "./theme";
@@ -50,6 +50,13 @@ export function Notice({ children, tone = "warning" }: { children: React.ReactNo
   return <View accessibilityLiveRegion="polite" style={[s.notice, { borderLeftColor: c[tone] }]}><Text style={[s.body, { color: c[tone] }]}>{children}</Text></View>;
 }
 export function Panel({ children, style }: { children: React.ReactNode; style?: ViewStyle }) { return <View style={[s.panel, style]}>{children}</View>; }
+export function FormViewport({ children }: { children: React.ReactNode }) {
+  return <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>{children}</KeyboardAvoidingView>;
+}
+export function useNarrowLayout() {
+  const { width, fontScale } = useWindowDimensions();
+  return width / fontScale < 360;
+}
 export function useReducedMotion() {
   const [reduced, setReduced] = useState(true);
   useEffect(() => { void AccessibilityInfo.isReduceMotionEnabled().then(setReduced); const listener = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduced); return () => listener.remove(); }, []);

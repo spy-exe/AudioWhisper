@@ -12,8 +12,10 @@ function useController() {
   const [connections, setConnections] = useState(noConnections);
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const busyRef = useRef(false);
+  const stopRef = useRef(false);
   const current = connections.profiles.find(profile => profile.id === connections.current);
   const refresh = useCallback(async () => {
     if (!capture) { setReady(true); return; }
@@ -58,23 +60,27 @@ function useController() {
     const session: Recording = JSON.parse(await capture.start(JSON.stringify({ title: title.trim() || "Gravação no celular", source, connection_id: current.id })));
     await refresh(); return session;
   });
-  const stop = () => operate(async () => {
-    if (!capture) return;
-    await capture.stop();
-    for (let attempt = 0; attempt < 20; attempt++) {
-      const next: Snapshot = JSON.parse(await capture.snapshot());
-      setSnapshot(next);
-      if (!next.active_id) break;
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-  });
+  const stop = async () => {
+    if (!capture || stopRef.current) return;
+    stopRef.current = true; setStopping(true); setError(null);
+    try {
+      await capture.stop();
+      for (let attempt = 0; attempt < 20; attempt++) {
+        const next: Snapshot = JSON.parse(await capture.snapshot());
+        setSnapshot(next);
+        if (!next.active_id) break;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    } catch { setError(Platform.OS === "android" ? "Não foi possível confirmar a parada. Use também Encerrar gravação na notificação do Android." : "Não foi possível confirmar a parada. Reabra o aplicativo para conferir o estado da gravação."); }
+    finally { stopRef.current = false; setStopping(false); }
+  };
   const sync = () => operate(async () => { await capture?.sync(); await refresh(); });
   const share = (id: string) => operate(async () => {
     if (!capture || !await Sharing.isAvailableAsync()) throw new Error("O compartilhamento de arquivos não está disponível neste aparelho.");
     const file = await capture.exportAudio(id);
     await Sharing.shareAsync(file, { mimeType: "audio/wav", UTI: "com.microsoft.waveform-audio", dialogTitle: "Compartilhar áudio original" });
   });
-  return { snapshot, connections, current, ready, busy, error, nativeAvailable: Boolean(capture), connect, start, stop, sync, share, clearError: () => setError(null) };
+  return { snapshot, connections, current, ready, busy: busy || stopping, stopping, error, nativeAvailable: Boolean(capture), connect, start, stop, sync, share, clearError: () => setError(null) };
 }
 type Controller = ReturnType<typeof useController>;
 const Context = createContext<Controller | null>(null);
