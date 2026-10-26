@@ -115,9 +115,11 @@ As [exceções temporárias de dependências](../apps/mobile/SECURITY.md) são e
 - Android nativo: 10 testes aprovados para WAV, recuperação, perda de confirmação, identidade do PC, atualização da transcrição e transporte real até o worker na GPU.
 - O teste de integração confirmou texto não vazio antes do encerramento, finalização no PC com `device=cuda` e permanência do áudio local.
 - [Build no GitHub](https://github.com/spy-exe/AudioWhisper/actions/runs/40391539786): quality, Android e iOS aprovados.
-- APK assinado no emulador Android 15: 2 testes completos aprovados em 115,436 s. Incluem captura de microfone e aplicativos combinados, texto real antes de parar, desligamento de Wi-Fi e dados, reenvio após reconexão, parada pela notificação, microfone com tela bloqueada, recuperação após encerramento forçado e parada disponível durante um timeout de conexão.
+- APK assinado no emulador Android 15: 2 testes completos aprovados, repetidos após os ajustes finais (122,637 s na última execução). Incluem captura de microfone e aplicativos combinados, texto real antes de parar, desligamento de Wi-Fi e dados, reenvio após reconexão, parada pela notificação, microfone com tela bloqueada, recuperação após encerramento forçado e parada disponível durante um timeout de conexão.
 - QA visual em 411dp e 320dp, incluindo fonte a 130%, teclado, navegação por três botões e compartilhamento do WAV pelo seletor do sistema. A validação encontrou e corrigiu sobreposição da navegação e quebra de rótulos. Nenhuma mensagem ou arquivo foi enviado pelo seletor de compartilhamento.
 - Transição de tela registrada em vídeo no emulador e conferida quadro a quadro. O fundo de navegação foi alinhado ao tema escuro para evitar clarão durante o fade. Navegação também conferida com movimento reduzido no sistema; não representa um benchmark de FPS em aparelho físico.
+
+A cor dos botões de navegação do sistema ainda precisa de conferência em aparelho físico: há um [problema documentado no emulador Android 15](https://docs.expo.dev/versions/v55.0.0/sdk/navigation-bar/#navigationbarsetstylestyle) que pode ignorar a mudança de estilo. A área reservada para esses botões e os rótulos do aplicativo foram validados separadamente.
 
 Os testes de dispositivo recusam aparelhos físicos e APIs fora do ambiente `e2e` em `localhost:8090`. `tests/build_android_fixture.py` gera um player somente para QA com o arquivo público `apps/web/tests/e2e/fixtures/speech.wav`. A validação não injeta gravações na biblioteca pessoal.
 
