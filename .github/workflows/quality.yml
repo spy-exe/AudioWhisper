@@ -120,14 +120,16 @@ jobs:
         timeout-minutes: 20
         run: |
           if ! command -v ffmpeg >/dev/null 2>&1 || ! python -c 'import ctypes; ctypes.CDLL("libmagic.so.1")'; then
-            # Keep Ubuntu signature verification while avoiding the slow regional mirror.
+            # Runners use mirror+file indirection; replace it as well as direct Azure URLs.
+            # Keep Ubuntu's signing keys and suites unchanged.
             sudo python - <<'PY'
           from pathlib import Path
           for name in ('/etc/apt/sources.list', '/etc/apt/sources.list.d/ubuntu.sources'):
               path = Path(name)
               if path.is_file():
                   original = path.read_text()
-                  updated = original.replace('http://azure.archive.ubuntu.com/ubuntu', 'https://archive.ubuntu.com/ubuntu')
+                  updated = original.replace('mirror+file:/etc/apt/apt-mirrors.txt', 'https://archive.ubuntu.com/ubuntu/')
+                  updated = updated.replace('http://azure.archive.ubuntu.com/ubuntu', 'https://archive.ubuntu.com/ubuntu')
                   if updated != original:
                       path.write_text(updated)
           PY
