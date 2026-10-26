@@ -31,6 +31,12 @@ Para gravar o desktop e o microfone mesmo depois de fechar o navegador, use **Wi
 O [capturador Windows](docs/WINDOWS_CAPTURE.md) fica na bandeja, preserva o áudio em disco e reenvia
 trechos após reconexão. Inicie-o com `.\scripts\Start-Capturador.ps1` antes de gravar.
 
+O [AudioWhisper Mobile](docs/MOBILE.md) conecta Android e iPhone ao mesmo PC pela rede local ou VPN.
+O Android tem captura nativa de microfone e áudio permitido de outros aplicativos, armazenamento
+local e texto ao vivo processado pela GPU do PC. A base iOS inclui microfone em segundo plano;
+captura de outros apps no iPhone exige uma extensão adicional. Consulte a documentação para
+instalação, limites de cada sistema e resultados de validação.
+
 ## Requisitos
 
 - Docker Desktop (Windows/macOS) ou Docker Engine + Docker Compose v2 (Linux)

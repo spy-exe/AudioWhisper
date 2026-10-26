@@ -46,3 +46,4 @@ yarn-error.*
 *.aab
 .claude/
 .env
+ios-build.log

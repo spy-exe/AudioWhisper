@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="studio.audiowhisper.qaprobe">
+  <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="35" />
+  <application android:label="QA accessibility probe" android:debuggable="true" />
+  <instrumentation android:name=".DumpRunner" android:targetPackage="studio.audiowhisper.qaprobe" android:functionalTest="true" />
+</manifest>

@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/core.test.ts",
     "test:coverage": "node --experimental-strip-types --experimental-test-coverage --test --test-coverage-include=src/core/*.ts --test-coverage-lines=95 --test-coverage-branches=90 tests/core.test.ts",
-    "build:android": "expo prebuild --platform android --no-install",
+    "prebuild:android": "expo prebuild --platform android --no-install",
+    "build:android": "node scripts/build-android.mjs",
     "build:web": "expo export --platform web"
   },
   "dependencies": {
