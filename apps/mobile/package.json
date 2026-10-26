@@ -26,6 +26,7 @@
     "expo-document-picker": "~55.0.17",
     "expo-file-system": "~55.0.26",
     "expo-font": "~55.0.8",
+    "expo-navigation-bar": "~55.0.17",
     "expo-network": "~55.0.18",
     "expo-router": "~55.0.18",
     "expo-secure-store": "~55.0.18",

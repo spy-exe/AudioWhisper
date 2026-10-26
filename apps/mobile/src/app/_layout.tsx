@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import IBMPlexSans_400Regular from "@expo-google-fonts/ibm-plex-sans/400Regular/IBMPlexSans_400Regular.ttf";
@@ -10,10 +11,12 @@ import { CompanionProvider, useCompanion } from "../core/controller";
 import { colors } from "../ui/theme";
 import { useReducedMotion } from "../ui/primitives";
 
+const navigationTheme = { ...DarkTheme, colors: { ...DarkTheme.colors, background: colors.background, card: colors.background, text: colors.text, border: colors.border, primary: colors.primary, notification: colors.amber } };
+
 export default function RootLayout() {
   const [loaded, error] = useFonts({ IBMPlexSans_400Regular, IBMPlexSans_500Medium, Manrope_700Bold });
   if (!loaded && !error) return <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: "center" }}><ActivityIndicator color={colors.primary} accessibilityLabel="Carregando o AudioWhisper" /></View>;
-  return <SafeAreaProvider><CompanionProvider><StatusBar style="light" /><Application /></CompanionProvider></SafeAreaProvider>;
+  return <SafeAreaProvider><CompanionProvider><ThemeProvider value={navigationTheme}><StatusBar style="light" /><Application /></ThemeProvider></CompanionProvider></SafeAreaProvider>;
 }
 function Application() {
   const { ready } = useCompanion();

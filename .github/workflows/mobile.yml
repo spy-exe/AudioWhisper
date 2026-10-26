@@ -57,11 +57,26 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - uses: actions/cache@v6.1.0
+        id: ndk
+        with:
+          path: /usr/local/lib/android/sdk/ndk/27.1.12297006
+          key: android-ndk-27.1.12297006-linux
+      - name: Install native toolchain
+        if: steps.ndk.outputs.cache-hit != 'true'
+        run: |
+          for attempt in 1 2 3; do
+            if "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'ndk;27.1.12297006'; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            sleep 5
+          done
       - run: npm ci --include=dev
       - run: npx expo prebuild --platform android --no-install
       - name: Native tests and standalone APK
         working-directory: apps/mobile/android
-        run: ./gradlew :audiowhisper-companion-capture:testDebugUnitTest :app:assembleRelease --console=plain --max-workers=2 -PreactNativeArchitectures=arm64-v8a
+        run: ./gradlew :audiowhisper-companion-capture:testDebugUnitTest :app:assembleRelease --console=plain --max-workers=2 -PreactNativeArchitectures=arm64-v8a -Dorg.gradle.jvmargs=-Xmx3072m
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:

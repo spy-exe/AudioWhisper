@@ -15,7 +15,18 @@ class AndroidCompanionFlow(unittest.TestCase):
     def setUp(self):
         guard()
         self.assertFalse(any(item["state"] == "recording" for item in sessions()), "Stop the previous QA recording first")
+        self.before_ids = {item["id"] for item in sessions()}
         adb("shell", "am", "force-stop", PACKAGE)
+
+    def tearDown(self):
+        if not hasattr(self, "before_ids"):
+            return
+        adb("shell", "svc", "wifi", "enable")
+        adb("shell", "svc", "data", "enable")
+        if any(item["state"] == "recording" and item["id"] not in self.before_ids for item in sessions()):
+            adb("shell", "am", "force-stop", PACKAGE)
+            adb("shell", "am", "start", "-W", "-n", PACKAGE + "/.MainActivity")
+        adb("shell", "am", "force-stop", "studio.audiowhisper.qaaudio")
 
     def test_stop_stays_available_while_a_connection_times_out(self):
         guard()
@@ -26,7 +37,7 @@ class AndroidCompanionFlow(unittest.TestCase):
         hide_keyboard()
         click("Microfone")
         click("Iniciar gravação")
-        item = wait_for(lambda: next((item for item in sessions() if item["title"] == "QA stop during network request" and item["chunks"] >= 1), None))
+        item = wait_for(lambda: next((item for item in sessions() if item["id"] not in self.before_ids and item["title"] == "QA stop during network request" and item["chunks"] >= 1), None))
         try:
             click("Conexão")
             wait_for(lambda: visible_text("Use a rede local ou o endereço da sua VPN."))
@@ -67,7 +78,7 @@ class AndroidCompanionFlow(unittest.TestCase):
             click("A single app")
             click("Entire screen")
         click("START")
-        recording = wait_for(lambda: next((item for item in sessions() if item["title"] == "QA mixed live flow" and item["chunks"] > 0), None))
+        recording = wait_for(lambda: next((item for item in sessions() if item["id"] not in self.before_ids and item["title"] == "QA mixed live flow" and item["chunks"] > 0), None))
         self.assertEqual("recording", recording["state"])
         self.assertEqual("mixed", recording["source"])
         adb("shell", "am", "start", "-W", "-n", "studio.audiowhisper.qaaudio/.MainActivity")
@@ -109,7 +120,7 @@ class AndroidCompanionFlow(unittest.TestCase):
         hide_keyboard()
         click("Microfone")
         click("Iniciar gravação")
-        microphone = wait_for(lambda: next((item for item in sessions() if item["title"] == "QA interrupted microphone" and item["chunks"] >= 2), None))
+        microphone = wait_for(lambda: next((item for item in sessions() if item["id"] not in self.before_ids and item["title"] == "QA interrupted microphone" and item["chunks"] >= 2), None))
         adb("shell", "input", "keyevent", "223")
         time.sleep(8)
         self.assertGreater(sessions()[0]["chunks"], microphone["chunks"])
