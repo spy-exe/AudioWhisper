@@ -113,7 +113,14 @@ jobs:
             apps/${{ matrix.service }}/requirements*.txt
             packages/core/pyproject.toml
       - name: System dependencies
-        run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg libmagic1
+        timeout-minutes: 5
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1 || ! python -c 'import ctypes; ctypes.CDLL("libmagic.so.1")'; then
+            sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update -qq
+            sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends ffmpeg libmagic1
+          fi
+          ffmpeg -version
+          python -c 'import ctypes; ctypes.CDLL("libmagic.so.1")'
       - name: Python dependencies
         run: python -m pip install -e packages/core -r apps/${{ matrix.service }}/requirements-dev.txt
       - name: Tests and coverage
