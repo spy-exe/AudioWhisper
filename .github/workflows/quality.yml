@@ -83,7 +83,7 @@ jobs:
 
   backend:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -112,8 +112,12 @@ jobs:
           cache-dependency-path: |
             apps/${{ matrix.service }}/requirements*.txt
             packages/core/pyproject.toml
+      - uses: actions/cache@v6.1.0
+        with:
+          path: ${{ runner.temp }}/audiowhisper-media-debs/*.deb
+          key: ${{ runner.os }}-${{ runner.arch }}-media-debs-v1
       - name: System dependencies
-        timeout-minutes: 5
+        timeout-minutes: 20
         run: |
           if ! command -v ffmpeg >/dev/null 2>&1 || ! python -c 'import ctypes; ctypes.CDLL("libmagic.so.1")'; then
             # Keep Ubuntu signature verification while avoiding the slow regional mirror.
@@ -128,7 +132,8 @@ jobs:
                       path.write_text(updated)
           PY
             sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update -qq
-            sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends ffmpeg libmagic1
+            mkdir -p "$RUNNER_TEMP/audiowhisper-media-debs"
+            sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o Dir::Cache::archives="$RUNNER_TEMP/audiowhisper-media-debs" -o APT::Keep-Downloaded-Packages=true install -y --no-install-recommends ffmpeg libmagic1
           fi
           ffmpeg -version
           python -c 'import ctypes; ctypes.CDLL("libmagic.so.1")'
