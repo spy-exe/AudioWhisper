@@ -27,16 +27,42 @@ class LiveIn(BaseModel):
     title: str = Field(default="Nova captura", min_length=1, max_length=500)
     source: Literal["microphone", "system", "mixed", "obs"] = "microphone"
     settings: TranscriptionSettingsIn = Field(default_factory=TranscriptionSettingsIn)
+    capture_id: uuid.UUID | None = None
+
+
+def previous_capture(db, job_id, fingerprint):
+    job = db.get(TranscriptionJob, job_id)
+    if job:
+        media = db.get(MediaFile, job.media_file_id)
+        if not media or json.loads(media.metadata_json or "{}").get("capture_fingerprint") != fingerprint:
+            raise HTTPException(409, "Este identificador pertence a outra captura. A gravação original foi preservada.")
+    return job
 
 
 @router.post("", status_code=201)
 def create_live(payload: LiveIn, db: Session = Depends(get_db)):
-    media_id = str(uuid.uuid4())
+    fingerprint = hashlib.sha256(payload.model_dump_json(exclude={"capture_id"}).encode()).hexdigest()
+    job_id = str(uuid.uuid5(uuid.NAMESPACE_URL, "audiowhisper:live:" + str(payload.capture_id))) if payload.capture_id else str(uuid.uuid4())
+    previous = previous_capture(db, job_id, fingerprint)
+    if previous:
+        return TranscriptionJobOut.model_validate(previous)
+    try:
+        return _create_live(payload, db, job_id, fingerprint)
+    except IntegrityError:
+        db.rollback()
+        previous = previous_capture(db, job_id, fingerprint)
+        if previous:
+            return TranscriptionJobOut.model_validate(previous)
+        raise HTTPException(409, "Outra tentativa está criando esta captura. Repita com o mesmo identificador.")
+
+
+def _create_live(payload, db, job_id, fingerprint):
+    media_id = str(uuid.uuid5(uuid.NAMESPACE_URL, "audiowhisper:live-media:" + job_id))
     media = MediaFile(id=media_id, original_name=payload.title + ".wav", stored_name=media_id + ".wav",
-                      mime_type="audio/wav", extension="wav", size_bytes=0, sha256=hashlib.sha256(media_id.encode()).hexdigest(), media_type="audio", metadata_json=json.dumps({"live": True, "source": payload.source}))
+                      mime_type="audio/wav", extension="wav", size_bytes=0, sha256=hashlib.sha256(media_id.encode()).hexdigest(), media_type="audio", metadata_json=json.dumps({"live": True, "source": payload.source, "capture_fingerprint": fingerprint}))
     db.add(media)
     db.flush()
-    job = TranscriptionJob(media_file_id=media_id, status="transcribing", model_name=payload.settings.model_name,
+    job = TranscriptionJob(id=job_id, media_file_id=media_id, status="transcribing", model_name=payload.settings.model_name,
         device=payload.settings.device, compute_type=payload.settings.compute_type, language_requested=payload.settings.language,
         settings_json=payload.settings.model_dump_json(), started_at=datetime.now(timezone.utc), current_stage="Capturando áudio ao vivo")
     db.add(job)

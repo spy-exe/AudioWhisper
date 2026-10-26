@@ -7,6 +7,7 @@ from app.dependencies import require_access_token
 from app.error_handlers import register_error_handlers
 from app.request_context import RequestContextMiddleware
 from app.routers import actions, bookmarks, documents, exports, health, jobs, knowledge, library, live, media, notebook, projects, recipes, search, session, settings, sharing, speakers, system, workspace, ws
+from app.routers import companion
 
 settings_obj = get_settings()
 
@@ -36,6 +37,7 @@ if settings_obj.cors_allow_origins:
 register_error_handlers(app)
 
 app.include_router(health.router)
+app.include_router(companion.router)
 app.include_router(settings.router)
 app.include_router(media.router)
 app.include_router(jobs.router)
