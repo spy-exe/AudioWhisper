@@ -116,6 +116,17 @@ jobs:
         timeout-minutes: 5
         run: |
           if ! command -v ffmpeg >/dev/null 2>&1 || ! python -c 'import ctypes; ctypes.CDLL("libmagic.so.1")'; then
+            # Keep Ubuntu signature verification while avoiding the slow regional mirror.
+            sudo python - <<'PY'
+          from pathlib import Path
+          for name in ('/etc/apt/sources.list', '/etc/apt/sources.list.d/ubuntu.sources'):
+              path = Path(name)
+              if path.is_file():
+                  original = path.read_text()
+                  updated = original.replace('http://azure.archive.ubuntu.com/ubuntu', 'https://archive.ubuntu.com/ubuntu')
+                  if updated != original:
+                      path.write_text(updated)
+          PY
             sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update -qq
             sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends ffmpeg libmagic1
           fi
